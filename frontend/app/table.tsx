@@ -12,8 +12,9 @@ import { CardRow } from "@/src/viz/PlayingCard";
 import { VerdictSheet } from "@/src/features/sim/VerdictSheet";
 import { RangeReadModal } from "@/src/features/sim/RangeReadModal";
 import { HeaderBar } from "@/src/ui/header";
-import { PrimaryButton } from "@/src/ui/components";
 import { CountUp, FlashView, PressableScale } from "@/src/ui/motion";
+import { FeedbackPill, ReviewQueueSheet } from "@/src/features/sim/FeedbackPill";
+import { ShortFeedback, shortFeedback } from "@/src/features/sim/causes";
 
 // Radial felt: `feltCenter` in the middle fading to `felt` at the edges.
 function FeltBackground() {
@@ -38,7 +39,7 @@ function FeltBackground() {
 
 const fmtBb1 = (v: number) => `${v.toFixed(1)} bb`;
 const fmtBb0 = (v: number) => `${v.toFixed(0)} bb`;
-const fmt1 = (v: number) => v.toFixed(1);
+const fmt2 = (v: number) => v.toFixed(2);
 
 export default function TableScreen() {
   const s = useStyles();
@@ -50,18 +51,51 @@ export default function TableScreen() {
   const tick = useSim((st) => st.tick);
   const finalize = useSim((st) => st.finalize);
 
-  const [showVerdict, setShowVerdict] = useState(false);
+  // Live-game UI state: deep dive / queue pause the game; the pill never does.
+  const [deepDive, setDeepDive] = useState<number | null>(null); // index into controller.decisions
+  const [queueOpen, setQueueOpen] = useState(false);
+  const [pill, setPill] = useState<{ key: string; fb: ShortFeedback; index: number | null } | null>(null);
+  const [scoreFlash, setScoreFlash] = useState<{ key: number; color: string } | null>(null);
   const [betTo, setBetTo] = useState<number | null>(null);
   const [timeLeft, setTimeLeft] = useState(0);
   const timerRef = useRef<any>(null);
 
   const st = controller?.state;
   const hero = st ? heroSeat(st) : null;
-  const heroToAct = !!(controller && st && !st.finished && hero && st.toAct === hero.index && controller.pendingRangeReadSeat == null && !showVerdict);
-  const la = heroToAct && st ? legalActions(st) : null;
   const rated = controller?.cfg.mode === "rated";
+  const feedbackMode = controller?.cfg.verdictMode ?? "coach";
+  const showScore = rated && feedbackMode !== "silent";
+  const showPills = rated && feedbackMode === "coach";
+  const paused = deepDive != null || queueOpen || (controller?.pendingRangeReadSeat != null);
+  const heroToAct = !!(controller && controller.heroToAct() && !paused);
+  const la = heroToAct && st ? legalActions(st) : null;
 
   const nodeKey = st ? `${st.handSeed}-${st.street}-${st.log.length}-${st.toAct}` : "none";
+
+  // Live runner: bots act one at a time with 400–900 ms delays; showdown is shown ~1.5 s,
+  // then the next hand starts by itself. Pausing simply cancels the pending timer, so
+  // resuming continues from the exact same state.
+  useEffect(() => {
+    if (!controller || paused) return;
+    if (controller.finished) {
+      const t = setTimeout(goReport, 1600);
+      return () => clearTimeout(t);
+    }
+    if (controller.state.finished) {
+      const t = setTimeout(() => {
+        controller.nextHand();
+        bump();
+      }, 1500);
+      return () => clearTimeout(t);
+    }
+    if (!controller.botToAct()) return;
+    const t = setTimeout(() => {
+      controller.botStep();
+      bump();
+    }, 400 + Math.floor(Math.random() * 500));
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [controller, paused, tick]);
 
   // reset bet selection on new node; start the EV computation in background while the player thinks
   useEffect(() => {
@@ -105,8 +139,18 @@ export default function TableScreen() {
     if (!controller) return;
     controller.act(action, timedOut);
     bump();
-    if (controller.cfg.mode === "rated" && controller.cfg.verdictMode === "immediate") setShowVerdict(true);
-    else if (controller.finished) goReport();
+    if (!rated) return;
+    const idx = controller.decisions.length - 1;
+    const grade = controller.grades[idx];
+    const dec = controller.decisions[idx];
+    const fb = shortFeedback(grade, dec);
+    const tone = fb.verdict === "correct" ? colors.progress : fb.verdict === "imprecise" ? colors.warning : colors.error;
+    if (feedbackMode !== "silent") setScoreFlash({ key: idx, color: tone });
+    if (showPills) setPill({ key: `d${idx}`, fb, index: idx });
+    if (feedbackMode !== "silent" && controller.score < 60 && !controller.scoreWarningShown) {
+      controller.scoreWarningShown = true;
+      setTimeout(() => setPill({ key: "warn60", fb: { verdict: "imprecise", points: 0, cause: it.sim.scoreWarning }, index: null }), 4200);
+    }
   }
 
   function goReport() {
@@ -114,15 +158,8 @@ export default function TableScreen() {
     router.replace("/report");
   }
 
-  function onVerdictContinue() {
-    setShowVerdict(false);
-    if (controller?.finished) goReport();
-  }
-
-  function nextHand() {
-    controller?.nextHand();
-    bump();
-  }
+  const stack = hero?.stack ?? 0;
+  const queue = controller ? controller.reviewQueue() : [];
 
   function presetAmount(frac: number): number {
     if (!la) return 0;
@@ -142,11 +179,47 @@ export default function TableScreen() {
     <View style={[s.root, { paddingTop: insets.top }]} testID="table-screen">
       <FeltBackground />
       <HeaderBar
-        title={it.sim.handOf(controller.handIndex + 1, controller.cfg.handsPlanned)}
+        title={paused ? it.sim.paused : it.tabs.sim}
         onBack={() => router.back()}
         tint={colors.onFelt}
-        right={rated ? <CountUp value={controller.score} format={fmt1} style={s.scorePill} testID="table-score" /> : undefined}
+        right={
+          queue.length > 0 && feedbackMode !== "silent" ? (
+            <PressableScale testID="review-queue-badge" onPress={() => setQueueOpen(true)} style={s.queueBadge}>
+              <Text style={s.queueBadgeText}>{it.sim.toReview(queue.length)}</Text>
+            </PressableScale>
+          ) : undefined
+        }
       />
+
+      {/* Persistent score bar */}
+      <FlashView trigger={scoreFlash?.key ?? null} color={scoreFlash?.color ?? colors.progress} radius={radius.md} style={s.scoreBarWrap}>
+        <View style={s.scoreBar} testID="score-bar">
+          {showScore ? (
+            <View style={s.scoreCell}>
+              <Text style={s.scoreLabel}>{it.sim.score.toUpperCase()}</Text>
+              <CountUp value={controller.score} format={fmt2} style={s.scoreValue} testID="table-score" />
+            </View>
+          ) : null}
+          <View style={s.scoreCell}>
+            <Text style={s.scoreLabel}>{it.sim.hands.toUpperCase()}</Text>
+            <Text style={s.scoreMeta} testID="table-hands">{Math.min(controller.handIndex + 1, controller.cfg.handsPlanned)}/{controller.cfg.handsPlanned}</Text>
+          </View>
+          <View style={s.scoreCell}>
+            <Text style={s.scoreLabel}>STACK</Text>
+            <CountUp value={stack} format={fmtBb1} style={s.scoreMeta} />
+          </View>
+        </View>
+      </FlashView>
+
+      {/* Non-blocking feedback pill (auto-dismiss 4 s, tap = deep dive) */}
+      {pill ? (
+        <FeedbackPill
+          key={pill.key}
+          feedback={pill.fb}
+          onPress={pill.index != null ? () => { setPill(null); setDeepDive(pill.index); } : undefined}
+          onExpire={() => setPill((p) => (p?.key === pill.key ? null : p))}
+        />
+      ) : null}
 
       {/* Villains */}
       <View style={s.villains}>
@@ -256,28 +329,34 @@ export default function TableScreen() {
               ) : null}
             </View>
           </>
-        ) : showdown && controller.finished ? (
-          <PrimaryButton title={it.report.title} onPress={goReport} testID="go-report" />
-        ) : showdown ? (
-          <PrimaryButton title="Prossima mano" onPress={nextHand} testID="next-hand" />
-        ) : null}
+        ) : (
+          <Text style={s.waiting} testID="table-waiting">{showdown ? "Showdown…" : paused ? it.sim.paused : "…"}</Text>
+        )}
       </View>
 
       <VerdictSheet
-        visible={showVerdict}
-        grade={controller.lastGrade}
-        decision={controller.lastDecision}
+        visible={deepDive != null}
+        grade={deepDive != null ? controller.grades[deepDive] : null}
+        decision={deepDive != null ? controller.decisions[deepDive] : null}
         score={controller.score}
-        villainPct={controller.lastDecision ? controller.villainRangePercent(villains.find((v) => !v.folded)?.index ?? 1) : 0}
+        villainPct={0}
         onReview={(lesson) => {
-          setShowVerdict(false);
+          setDeepDive(null);
           router.push(`/lesson/${lesson}`);
         }}
-        onContinue={onVerdictContinue}
+        onContinue={() => setDeepDive(null)}
       />
-
+      <ReviewQueueSheet
+        visible={queueOpen}
+        items={queue.map((d) => ({ index: controller.decisions.indexOf(d), decision: d, feedback: shortFeedback(controller.grades[controller.decisions.indexOf(d)], d) }))}
+        onClose={() => setQueueOpen(false)}
+        onOpen={(i) => {
+          setQueueOpen(false);
+          setDeepDive(i);
+        }}
+      />
       <RangeReadModal
-        visible={controller.pendingRangeReadSeat != null && !showVerdict}
+        visible={controller.pendingRangeReadSeat != null && deepDive == null}
         onSubmit={(w) => {
           controller.submitRangeRead(w);
           bump();
@@ -298,7 +377,15 @@ function fmt(c: any): string | undefined {
 
 const useStyles = makeStyles((c) => ({
   root: { flex: 1, backgroundColor: c.felt },
-  scorePill: { color: c.reward, fontSize: 16, fontWeight: "700", ...tabular },
+  scoreBarWrap: { marginHorizontal: spacing.md, marginTop: spacing.xs },
+  scoreBar: { flexDirection: "row", backgroundColor: c.surfaceSecondary, borderRadius: radius.md, borderWidth: 1, borderColor: c.border, paddingVertical: spacing.sm, paddingHorizontal: spacing.md, gap: spacing.md, alignItems: "center" },
+  scoreCell: { flex: 1 },
+  scoreLabel: { color: c.muted, fontSize: 10, fontWeight: "700", letterSpacing: 0.8 },
+  scoreValue: { color: c.reward, fontSize: 22, fontWeight: "800", ...tabular },
+  scoreMeta: { color: c.onSurface, fontSize: 16, fontWeight: "700", ...tabular },
+  queueBadge: { backgroundColor: c.warning, borderRadius: radius.pill, paddingHorizontal: 10, paddingVertical: 6 },
+  queueBadgeText: { color: c.onWarning, fontSize: 12, fontWeight: "800" },
+  waiting: { color: c.muted, textAlign: "center", fontSize: 13, paddingVertical: spacing.md },
   villains: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: spacing.sm, paddingHorizontal: spacing.md, paddingTop: spacing.sm },
   pod: { backgroundColor: c.surfaceSecondary, borderRadius: radius.md, padding: spacing.sm, alignItems: "center", borderWidth: 1, borderColor: c.border, width: 104, gap: 3 },
   podHead: { flexDirection: "row", justifyContent: "space-between", width: "100%" },

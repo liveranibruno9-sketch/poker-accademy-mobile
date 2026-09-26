@@ -183,3 +183,10 @@ frontend:
 agent_communication:
   - agent: "main"
     message: "Verify: `cd /app/frontend && npm test` all green; simulator table still works end to end (actions, verdict sheet shows EV bars with distinct values for bet sizes, report), no UI freeze when the hero node opens; EV bars for Bet/Raise are not all identical/zero."
+
+## Iteration 6 — Revisione 4b: partita continua con feedback non bloccante (main agent)
+frontend:
+  - task: "Live runner in table.tsx (bots 400–900ms, auto next hand, auto report), persistent score bar (CountUp + flash), FeedbackPill (4s, tappable → VerdictSheet deep dive, pause/resume), review queue badge+sheet, feedback modes coach/scoreOnly/silent in setup, report ended-early card with Ripassa"
+    implemented: true
+    working: "NA"
+    needs_retesting: true

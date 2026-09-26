@@ -4,7 +4,7 @@ import { useRouter } from "expo-router";
 import { Body, Card, Heading, Pill, PrimaryButton, ScreenContainer, SectionLabel } from "@/src/ui/components";
 import { makeStyles, spacing } from "@/src/theme";
 import { it } from "@/src/i18n/it";
-import { useApp } from "@/src/store/appStore";
+import { useApp, VerdictMode } from "@/src/store/appStore";
 import { COMPOSITIONS, useSim } from "@/src/features/sim/simStore";
 
 export default function SimSetup() {
@@ -19,6 +19,7 @@ export default function SimSetup() {
   const [mode, setMode] = useState<"rated" | "training">("rated");
   const [hud, setHud] = useState(profile.hudEnabled);
 
+  const [feedback, setFeedback] = useState<VerdictMode>(["coach", "scoreOnly", "silent"].includes(profile.verdictMode) ? profile.verdictMode : "coach");
   const onStart = () => {
     start({
       handsPlanned: hands,
@@ -27,8 +28,9 @@ export default function SimSetup() {
       mode,
       hudEnabled: hud,
       timerSec: profile.timerSec,
-      verdictMode: profile.verdictMode,
+      verdictMode: feedback,
       seed: `sess-${Date.now()}`,
+      live: true,
     });
     router.push("/table");
   };
@@ -49,6 +51,17 @@ export default function SimSetup() {
           {mode === "rated" ? "Parti da 100 punti. Conta la decisione, non il piatto vinto." : "Nessun punteggio, equity visibile, timer spento."}
         </Body>
       </Card>
+
+      {mode === "rated" ? (
+        <Card style={{ marginTop: spacing.md }}>
+          <SectionLabel>{it.sim.feedbackMode}</SectionLabel>
+          <View style={s.row}>
+            {([["coach", it.profile.verdictImmediate], ["scoreOnly", it.profile.verdictScoreOnly], ["silent", it.profile.verdictDeferred]] as [VerdictMode, string][]).map(([id, label]) => (
+              <Pill key={id} label={label} active={feedback === id} onPress={() => setFeedback(id)} testID={`feedback-${id}`} />
+            ))}
+          </View>
+        </Card>
+      ) : null}
 
       <Card style={{ marginTop: spacing.md }}>
         <SectionLabel>{it.sim.hands}</SectionLabel>

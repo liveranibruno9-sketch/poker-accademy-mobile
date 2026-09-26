@@ -31,8 +31,10 @@ export interface SimConfig {
   mode: "rated" | "training";
   hudEnabled: boolean;
   timerSec: number;
-  verdictMode: "immediate" | "endOfHand";
+  verdictMode: "coach" | "scoreOnly" | "silent";
   seed?: string;
+  // live = the UI drives bot actions one at a time (with delays); false = bots run synchronously (tests)
+  live?: boolean;
 }
 
 export interface VillainStat {
@@ -51,6 +53,7 @@ export class SimController {
   finished = false;
   endedEarly = false;
   decisions: DecisionRecord[] = [];
+  grades: DecisionGrade[] = []; // parallel to decisions (deep-dive of any past decision)
   scoreTimeline: number[] = [];
   startedAt = new Date().toISOString();
 
@@ -69,6 +72,7 @@ export class SimController {
   private statPfr: Record<number, number> = {};
   private countedPreflop: Record<number, boolean> = {};
 
+  scoreWarningShown = false;
   lastGrade: DecisionGrade | null = null;
   lastDecision: DecisionRecord | null = null;
   lastRangeRead: { dice: number; verdict: string; pointsLost: number } | null = null;
@@ -152,21 +156,48 @@ export class SimController {
     }
   }
 
-  // Run bots until hero acts or hand ends.
+  // Run bots until hero acts or hand ends (synchronous; in live mode the UI calls botStep()).
   private autoAdvance() {
-    let guard = 0;
-    while (!this.state.finished && this.state.toAct !== -1 && !this.state.seats[this.state.toAct].isHero) {
-      const seat = this.state.seats[this.state.toAct];
-      const action = botDecision(this.state, seat.index);
-      this.step(action, seat);
-      if (++guard > 200) break;
+    if (!this.cfg.live) {
+      let guard = 0;
+      while (this.botToAct()) {
+        const seat = this.state.seats[this.state.toAct];
+        this.step(botDecision(this.state, seat.index), seat);
+        if (++guard > 200) break;
+      }
     }
+    this.afterAdvance();
+  }
+
+  private afterAdvance() {
     if (this.state.finished) {
       this.onHandEnd();
-    } else {
+    } else if (!this.botToAct()) {
       this.evCache = null;
       this.maybeTriggerRangeRead();
     }
+  }
+
+  botToAct(): boolean {
+    return !this.state.finished && this.state.toAct !== -1 && !this.state.seats[this.state.toAct].isHero;
+  }
+
+  heroToAct(): boolean {
+    return !this.state.finished && this.state.toAct !== -1 && this.state.seats[this.state.toAct].isHero;
+  }
+
+  // Live mode: perform exactly one bot action. Returns false if no bot is to act.
+  botStep(): boolean {
+    if (!this.botToAct()) return false;
+    const seat = this.state.seats[this.state.toAct];
+    this.step(botDecision(this.state, seat.index), seat);
+    this.afterAdvance();
+    return true;
+  }
+
+  // Errors and imprecisions, worst first (the review queue / report list).
+  reviewQueue(): DecisionRecord[] {
+    return this.decisions.filter((d) => d.verdict !== "correct").sort((a, b) => b.pointsLost - a.pointsLost);
   }
 
   effectiveRange(): Float32Array {
@@ -288,8 +319,10 @@ export class SimController {
       bestLabel: grade.bestEv.label,
       evActions: ev.actions.map((a) => ({ label: a.label, evBb: a.evBb, rank: a.rank })),
       diceRead: this.lastRangeRead?.dice,
+      villainPct: this.averageVillainPct(),
     };
     this.decisions.push(rec);
+    this.grades.push({ ...grade, pointsLost });
     this.lastGrade = { ...grade, pointsLost };
     this.lastDecision = rec;
     this.lastRangeRead = null;
@@ -301,6 +334,7 @@ export class SimController {
 
   private onHandEnd() {
     this.scoreTimeline.push(this.score);
+    this.score = Math.max(0, Math.min(100, this.score));
     if (this.cfg.mode === "rated" && this.score < 50) {
       this.endedEarly = true;
       this.finished = true;
@@ -327,6 +361,13 @@ export class SimController {
       pfr: n ? Math.round((this.statPfr[seat] / n) * 100) : 0,
       reliable: n >= 25,
     };
+  }
+
+  // Mean width (% of hands) of the active villains' tracked ranges, for the deep dive.
+  averageVillainPct(): number {
+    const active = this.state.seats.filter((x) => !x.isHero && !x.folded);
+    if (!active.length) return 0;
+    return active.reduce((a, x) => a + rangePercent(this.villainRanges[x.index]), 0) / active.length;
   }
 
   villainRangePercent(seat: number): number {

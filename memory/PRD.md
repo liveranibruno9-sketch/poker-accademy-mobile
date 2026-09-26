@@ -59,6 +59,12 @@ App mobile "Poker Academy": trainer di Texas Hold'em No Limit 6-max cash (micro 
 - `bots.ts`: `calib` per profilo (fit con `scripts/calibrate-bots.js`).
 - `npm test` → `scripts/run-tests.js` (+ `scripts/lib/transpile.js`); nuovo `__tests__/acceptance.ts` (29 asserzioni). Tutti verdi.
 
+## Revisione 4b — simulatore come partita continua (2026-06-26)
+- `SimController`: modalità `live` (UI guida i bot con `botStep()`), `grades[]` parallelo a `decisions[]`, `reviewQueue()`, `scoreWarningShown`, clamp 0–100.
+- `app/table.tsx`: runner con timer 400–900 ms, showdown 1,5 s → mano successiva automatica, report automatico; barra punteggio fissa (CountUp + flash progress/warning/error); `FeedbackPill` (4 s, tap → VerdictSheet, pausa/ripresa affidabile via cancellazione timer); badge "N da rivedere" + `ReviewQueueSheet`.
+- `causes.ts`: cause ≤ 8 parole per ogni classe di errore. VerdictSheet: stato del tavolo al nodo, "Rivedi: L02 · titolo", "Riprendi".
+- Feedback mode nel setup (coach / scoreOnly / silent), avviso a 60, stop a 50 con card "Ripassa" nel report; report elenca tutti gli errori ordinati per punti persi.
+
 ## Backlog (prioritized)
 - **P0**: —
 - **P1**: EV via rollout multi-strada completo (attuale: modello in forma chiusa, vedi DECISIONS.md); replay mano con "rigioca da qui"; export report come immagine (react-native-view-shot).

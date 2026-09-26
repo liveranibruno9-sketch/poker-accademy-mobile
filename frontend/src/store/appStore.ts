@@ -12,7 +12,8 @@ const REVIEW_INTERVALS = [1, 3, 7, 16, 35]; // days, SM-2 simplified
 
 export type Level = "novice" | "intuitive" | "basics";
 export type ThemePref = "system" | "dark" | "light";
-export type VerdictMode = "immediate" | "endOfHand";
+// Feedback during a live session: coach = pill after every graded decision; scoreOnly = score moves, no pills; silent = nothing until the report.
+export type VerdictMode = "coach" | "scoreOnly" | "silent";
 export type ReduceMotionPref = "system" | "on" | "off";
 
 export interface Profile {
@@ -67,6 +68,7 @@ export interface DecisionRecord {
   bestLabel: string;
   evActions: EvActionRecord[];
   diceRead?: number;
+  villainPct?: number; // villain range width (% of hands) at that node
 }
 
 export interface SessionRecord {
@@ -111,7 +113,7 @@ function defaultProfile(): Profile {
     onboarded: false,
     level: "intuitive",
     theme: "dark",
-    verdictMode: "immediate",
+    verdictMode: "coach",
     timerSec: 25,
     hudEnabled: true,
     reduceMotion: "system",

@@ -8,6 +8,8 @@ import { DecisionRecord } from "@/src/store/appStore";
 import { EvBarChart } from "@/src/viz/charts";
 import { decisiveNumber, explainText } from "./explain";
 import { PrimaryButton, SecondaryButton, SectionLabel } from "@/src/ui/components";
+import { getLesson } from "@/src/content/curriculum";
+import { CardRow } from "@/src/viz/PlayingCard";
 import { CountUp, FlashView } from "@/src/ui/motion";
 import { haptic } from "@/src/ui/haptics";
 
@@ -39,7 +41,9 @@ export function VerdictSheet({
   const icon = grade.verdict === "correct" ? "✓" : grade.verdict === "imprecise" ? "!" : "✕";
   const num = decisiveNumber(grade);
   const lesson = grade.errorCode ? mapLesson(grade.errorCode) : "L04";
+  const lessonTitle = getLesson(lesson)?.title ?? "";
   const key = `${decision.handSeed}-${decision.street}-${decision.chosenLabel}`;
+  const streetIt = { preflop: "Preflop", flop: "Flop", turn: "Turn", river: "River" }[decision.street] ?? decision.street;
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onContinue}>
@@ -64,6 +68,15 @@ export function VerdictSheet({
             </View>
           </FlashView>
 
+          {/* Table state at that node */}
+          <View style={s.nodeRow} testID="verdict-node">
+            <CardRow cards={decision.heroCards} size="villain" gap={3} />
+            <View style={{ flex: 1 }}>
+              <Text style={s.nodeText}>{decision.heroPosition} · {streetIt} · {it.sim.pot} {decision.potBb.toFixed(1)} bb</Text>
+              <Text style={s.nodeSub}>{decision.board.length ? decision.board.join(" ") : "—"} · {decision.chosenLabel} → {it.verdict.best ?? "meglio"}: {decision.bestLabel}</Text>
+            </View>
+          </View>
+
           {num ? (
             <View style={s.numberBox}>
               <SectionLabel>{it.verdict.theNumber}</SectionLabel>
@@ -76,13 +89,13 @@ export function VerdictSheet({
 
           <Text style={s.explain}>{explainText(grade)}</Text>
 
-          <Text style={s.rangeLine}>{it.verdict.villainRange}: ~{villainPct.toFixed(0)}% delle mani</Text>
+          <Text style={s.rangeLine}>{it.verdict.villainRange}: ~{(decision.villainPct ?? villainPct).toFixed(0)}% delle mani</Text>
 
           <View style={{ gap: spacing.sm, marginTop: spacing.md }}>
-            {grade.verdict === "error" ? (
-              <SecondaryButton title={`${it.verdict.review} ${lesson}`} onPress={() => onReview(lesson)} testID="verdict-review" />
+            {grade.verdict !== "correct" ? (
+              <SecondaryButton title={it.sim.reviewLesson(lesson, lessonTitle)} onPress={() => onReview(lesson)} testID="verdict-review" />
             ) : null}
-            <PrimaryButton title={it.verdict.keepPlaying} onPress={onContinue} testID="verdict-continue" />
+            <PrimaryButton title={it.sim.resume} onPress={onContinue} testID="verdict-continue" />
           </View>
         </View>
       </View>
@@ -121,6 +134,9 @@ const useStyles = makeStyles((c) => ({
   subtitleRow: { flexDirection: "row", alignItems: "baseline", flexWrap: "wrap", marginTop: 2 },
   subtitle: { color: c.muted, fontSize: 13, ...tabular },
   scoreValue: { color: c.reward, fontSize: 14, fontWeight: "700", ...tabular },
+  nodeRow: { flexDirection: "row", alignItems: "center", gap: spacing.md, marginTop: spacing.md },
+  nodeText: { color: c.onSurface, fontSize: 13, fontWeight: "700", ...tabular },
+  nodeSub: { color: c.muted, fontSize: 12, marginTop: 2, ...tabular },
   numberBox: { backgroundColor: c.surfaceTertiary, borderRadius: radius.md, padding: spacing.md, marginTop: spacing.lg, borderLeftWidth: 3, borderLeftColor: c.highlight },
   numberValue: { color: c.highlight, fontSize: 22, fontWeight: "700", ...tabular, marginTop: 2 },
   explain: { color: c.onSurface, fontSize: 14, lineHeight: 21, marginTop: spacing.md },

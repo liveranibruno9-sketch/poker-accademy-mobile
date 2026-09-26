@@ -1,7 +1,7 @@
 import React from "react";
 import { Text, View, useWindowDimensions } from "react-native";
 import { useRouter } from "expo-router";
-import { Body, Card, Heading, PrimaryButton, ScreenContainer, SectionLabel, StatValue } from "@/src/ui/components";
+import { Body, Card, Heading, PrimaryButton, ScreenContainer, SecondaryButton, SectionLabel, StatValue } from "@/src/ui/components";
 import { CountUp } from "@/src/ui/motion";
 import { makeStyles, spacing, tabular, useTheme } from "@/src/theme";
 import { it } from "@/src/i18n/it";
@@ -49,7 +49,8 @@ export default function ReportScreen() {
   const classList = Object.entries(byClass).sort((a, b) => b[1].points - a[1].points);
   const maxPoints = Math.max(...classList.map(([, v]) => v.points), 1);
 
-  const costliest = [...errors].sort((a, b) => b.pointsLost - a.pointsLost).slice(0, 3);
+  // Full review queue: every non-correct decision, worst first (nothing is lost if pills were ignored)
+  const costliest = [...errors].sort((a, b) => b.pointsLost - a.pointsLost);
   const wheelW = Math.min(width - spacing.xl * 4, 200);
   const timelineW = width - spacing.xl * 2 - spacing.lg * 2;
 
@@ -60,7 +61,14 @@ export default function ReportScreen() {
   return (
     <ScreenContainer testID="report-screen">
       <SectionLabel>{it.report.title}</SectionLabel>
-      {controller.endedEarly ? <Body style={{ color: colors.warning, marginBottom: spacing.sm }}>⚠ {it.report.endedEarly}</Body> : null}
+      {controller.endedEarly ? (
+        <Card style={{ marginBottom: spacing.md, borderColor: colors.warning }} testID="ended-early-card">
+          <Body style={{ color: colors.onSurface }}>⚠ {it.report.endedEarly}</Body>
+          <View style={{ marginTop: spacing.sm }}>
+            <SecondaryButton title={it.home.review} onPress={() => router.push("/quiz/review")} testID="report-review" />
+          </View>
+        </Card>
+      ) : null}
 
       <Card style={{ alignItems: "center" }}>
         <EquityWheel equity={score / 100} width={wheelW} labelHero={verdictWord} labelVillain="Persi" />

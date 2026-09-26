@@ -37,7 +37,7 @@ export default function ProfileScreen() {
       <Card style={{ marginTop: spacing.md }}>
         <SectionLabel>{it.profile.verdictMode}</SectionLabel>
         <View style={s.row}>
-          {([["immediate", it.profile.verdictImmediate], ["endOfHand", it.profile.verdictDeferred]] as [VerdictMode, string][]).map(([id, label]) => (
+          {([["coach", it.profile.verdictImmediate], ["scoreOnly", it.profile.verdictScoreOnly], ["silent", it.profile.verdictDeferred]] as [VerdictMode, string][]).map(([id, label]) => (
             <Pill key={id} label={label} active={profile.verdictMode === id} onPress={() => setProfile({ verdictMode: id })} testID={`verdict-${id}`} />
           ))}
         </View>

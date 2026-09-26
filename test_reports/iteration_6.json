@@ -1,0 +1,34 @@
+{
+  "summary": "Revision 4b (continuous simulator) validated end-to-end. `cd /app/frontend && npm test` exits 0 (ACCEPTANCE 29 / GAME 12 / ENGINE 20). UI (390x844, EXPO_PUBLIC_BACKEND_URL) confirms: (1) sim-setup shows feedback-coach / feedback-scoreOnly / feedback-silent pills; (2) table-screen shows score-bar with table-score '100.00', table-hands '1/10', STACK; no 'Prossima mano' button anywhere; bots act on their own with visible delays (log grows without user tap); (3) after hero acts, feedback-pill appears within ~500 ms with icon (✓/!/✕), signed points (e.g. '−1,4') and short cause (e.g. 'all-in corretto', 'c'era una linea con EV migliore'); pill auto-dismisses after ~4 s while the game keeps going; (4) tapping an error/imprecision pill opens verdict-sheet with verdict-node (hero cards + BTN · Preflop · Piatto 5.5 bb), decisiveNumber ('serviva 27%, avevi 47%'), distinct EV bars per size (Raise 33% 3.0 / 50% 2.9 / 75% 2.9 / 100% 2.8 / Call 1.6 / Fold 0.0 / All-in -0.5), explain text, villain range '~72% delle mani' (≤100%), 'Rivedi: L04 · Expected Value' + 'Riprendi'; header title reads 'In pausa' while sheet is open; tapping verdict-continue resumes the same hand (table-hands still 1/10); (5) review-queue-badge '1 da rivedere' appears after a non-correct decision, opens review-queue-sheet with queue-item-*, tapping an item opens verdict-sheet; (6) feedback-scoreOnly hides pills but keeps table-score visible; feedback-silent hides table-score, pills and review-queue-badge (table-hands still visible); (7) score never goes NaN, stays 0-100, decreases with red flash on errors; (8) with aggressive bad play, session ended at score 48.3, report-screen opened automatically showing ended-early-card ('Sessione interrotta: punteggio sotto 50') with report-review 'Ripassa' button; (9) 0 console errors during the full run; 1 pre-existing deprecation warning (props.pointerEvents).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": [
+      {"component": "pointerEvents prop", "issue": "Pre-existing deprecation warning: 'props.pointerEvents is deprecated. Use style.pointerEvents' (not introduced by this revision, present since iteration 5)."}
+    ]
+  },
+  "test_report_links": [
+    "/app/frontend/src/engine/__tests__/acceptance.ts",
+    "/app/frontend/src/engine/__tests__/game.ts",
+    "/app/frontend/src/engine/__tests__/run.ts"
+  ],
+  "action_items": [
+    "(Optional, pre-existing) Migrate remaining pointerEvents props from JSX prop to style.pointerEvents to clear the deprecation warning."
+  ],
+  "critical_code_review_comments": [
+    "table.tsx correctly uses a single effect (deps: controller/paused/tick) with setTimeout to (a) run one bot with 400-900 ms jitter, (b) advance to next hand after 1500 ms showdown, (c) navigate to /report after 1600 ms when controller.finished — cleanup is done on unmount/pause via clearTimeout, so pausing (deep-dive / queue / range-read) cleanly stops advancement.",
+    "FeedbackPill uses a 4000 ms timeout inside its own useEffect keyed by mount, and expiration is guarded by key equality in the parent to avoid clobbering a newer pill.",
+    "simController.act() applies min-double-count protection when RANGE_MISREAD already penalized the hand — a nice touch that avoids compounding penalties.",
+    "verdictMode='silent' correctly hides score, pills AND queue badge (all three gated by feedbackMode !== 'silent' in table.tsx).",
+    "ended-early path (score < 50 at onHandEnd → controller.endedEarly = true → controller.finished = true) reliably triggers report-screen and shows the ended-early-card + report-review button routed to /quiz/review."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (frontend-only)", "frontend": "100%"},
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Revision 4b continuous simulator is fully green. All acceptance flows verified live in the web preview: continuous play with auto-advancing hands and auto-opening report, non-blocking auto-dismissing pill, deep-dive pause+resume on same hand, review queue with worst-first sorting, three feedback modes (coach/scoreOnly/silent), score animation, ended-early card. Engine tests 29+12+20=61 pass.",
+  "rca_of_issue": "N/A — this iteration validated revision 4b (continuous simulator + non-blocking pills + verdict deep-dive + review queue). No new bugs introduced."
+}

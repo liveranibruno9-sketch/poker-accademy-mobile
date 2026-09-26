@@ -40,6 +40,11 @@ Scelte tecniche e deviazioni rigorose rispetto al brief, con motivazione.
 - **Resta approssimato**: modello in forma chiusa (equity vs range + pot math + fold equity) senza rollout multi-strada; la fold equity ignora il gioco futuro dopo il call (il villain che chiama viene trattato a showdown); la policy postflop è a bucket (strong/medium/draw/weak) e non pesa i blocker.
 - **Test**: `npm test` esegue tutti i file in `src/**/__tests__` (engine, game, acceptance): pot odds call, fold con equity, open-limp = 3,0 esatti, banda 0,10 bb, bluff nit > tag > whale, side pot con 3 all-in, 10 000 mani con fiches conservate, convergenza stat bot.
 
+## Revisione 4b — timing del feedback controllato dall'utente
+- Il gioco non si ferma mai per il feedback: segnale immediato e leggero (pill 4 s, ≤ 8 parole), approfondimento solo al tap. Pausa = cancellazione del timer dei bot; ripresa = ri-schedulazione dallo stesso `GameState` (nessuna copia/ripristino).
+- L'EV è già in cache all'apertura del nodo (`precomputeEv`); se non lo fosse, `act()` lo calcola in modo sincrono (≤ ~100 ms) prima della pill: non esiste un caso in cui la pill mostri un dato parziale, e la partita non attende mai.
+- I bot agiscono ogni 400–900 ms (casuale) per sembrare vivi; la mano è comunque deterministica dato il seed (delay solo di presentazione).
+
 ## Fuori scope v1 (come da brief)
 - Nessun backend, login, denaro reale, IAP, ads, multiplayer. `SyncProvider` predisposto (`services/sync.ts`).
 - Contenuto reale solo per M1 (10 lezioni). M2–M8 scheletro "in arrivo".
