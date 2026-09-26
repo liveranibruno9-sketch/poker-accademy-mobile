@@ -101,3 +101,35 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+## Iteration 2 — Revisione 1: palette + juice (main agent)
+frontend:
+  - task: "New palette tokens (theme.ts) dark+light, felt dark green in light, new tokens reward/progress/rare/streak/interactive/feltCenter/scrim/onFelt"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/theme.ts"
+    needs_retesting: true
+  - task: "Token migration: interactive for selection/links/focus (Pill, tab bar, quiz option, onboarding level, table to-act), brandPrimary only CTA/bet, reward for score, progress for bars"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/ui/components.tsx, app/table.tsx, app/(tabs)/*.tsx, app/quiz/[id].tsx, app/onboarding.tsx, app/report.tsx"
+    needs_retesting: true
+  - task: "Table radial felt (SVG RadialGradient feltCenter->felt), CountUp on score/pot/stacks, FlashView on hero win, action buttons PressableScale"
+    implemented: true
+    working: "NA"
+    file: "frontend/app/table.tsx"
+    needs_retesting: true
+  - task: "Motion utilities: PressableScale, CountUp, FlashView, usePressDepth, useMotionEnabled; PrimaryButton lip; haptics wrapper"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/ui/motion.tsx, frontend/src/ui/haptics.ts, frontend/src/ui/components.tsx"
+    needs_retesting: true
+  - task: "Profile: 'Riduci animazioni' switch (Sistema/Sì/No) persisted in profile.reduceMotion"
+    implemented: true
+    working: "NA"
+    file: "frontend/app/(tabs)/profile.tsx, frontend/src/store/appStore.ts"
+    needs_retesting: true
+test_plan:
+  current_focus: ["Full UI regression after palette+motion refactor: onboarding -> home -> lesson -> quiz -> sim setup -> table actions -> verdict -> report; theme toggle dark/light in Profile; reduce-motion pills"]
+agent_communication:
+  - agent: "main"
+    message: "Palette swapped to gold/teal/blue on near-black; reanimated-based juice added to all controls. Please verify no runtime errors (reanimated on web), all flows still work, numbers render (CountUp), theme switch to Chiaro renders (felt stays green), and Profile reduce-motion pills toggle."

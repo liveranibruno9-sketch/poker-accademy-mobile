@@ -1,7 +1,10 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { ActivityIndicator, Pressable, ScrollView, Text, View, ViewStyle } from "react-native";
+import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { makeStyles, radius, spacing, tabular, useTheme } from "@/src/theme";
+import { makeStyles, radius, shade, spacing, tabular, useTheme } from "@/src/theme";
+import { PressableScale, useMotionEnabled, usePressDepth } from "./motion";
+import { haptic } from "./haptics";
 
 export function ScreenContainer({
   children,
@@ -64,10 +67,10 @@ export function StatValue({ label, value, delta, accent, testID }: { label: stri
   const { colors } = useTheme();
   return (
     <View style={s.kpi} testID={testID}>
-      <View style={[s.kpiBar, accent && { backgroundColor: colors.brandPrimary }]} />
+      <View style={[s.kpiBar, accent && { backgroundColor: colors.reward }]} />
       <View style={{ flex: 1 }}>
         <Text style={s.sectionLabel}>{label.toUpperCase()}</Text>
-        <Text style={s.kpiValue}>{value}</Text>
+        <Text style={[s.kpiValue, accent && { color: colors.reward }]}>{value}</Text>
         {delta ? (
           <Text style={[s.kpiDelta, { color: delta.up ? colors.positive : colors.negative }]}>
             {delta.up ? "▲" : "▼"} {delta.text}
@@ -78,20 +81,31 @@ export function StatValue({ label, value, delta, accent, testID }: { label: stri
   );
 }
 
+const LIP = 4;
+
 export function PrimaryButton({ title, onPress, disabled, testID, tone = "primary" }: { title: string; onPress: () => void; disabled?: boolean; testID?: string; tone?: "primary" | "success" | "danger" }) {
   const s = useStyles();
   const { colors } = useTheme();
   const bg = tone === "success" ? colors.success : tone === "danger" ? colors.error : colors.brandPrimary;
-  const fg = tone === "primary" ? colors.onBrandPrimary : "#FFFFFF";
+  const fg = tone === "success" ? colors.onSuccess : tone === "danger" ? colors.onError : colors.onBrandPrimary;
+  const { depth, press, release } = usePressDepth();
+  const faceStyle = useAnimatedStyle(() => ({ transform: [{ translateY: depth.value * LIP }] }));
   return (
     <Pressable
       testID={testID}
-      onPress={onPress}
+      onPressIn={press}
+      onPressOut={release}
+      onPress={() => {
+        haptic.light();
+        onPress();
+      }}
       disabled={disabled}
       accessibilityRole="button"
-      style={({ pressed }) => [s.btn, { backgroundColor: bg, opacity: disabled ? 0.4 : pressed ? 0.85 : 1 }]}
+      style={[s.btnLip, { backgroundColor: shade(bg, -0.38), opacity: disabled ? 0.4 : 1 }]}
     >
-      <Text style={[s.btnText, { color: fg }]}>{title}</Text>
+      <Animated.View style={[s.btn, { backgroundColor: bg }, faceStyle]}>
+        <Text style={[s.btnText, { color: fg }]}>{title}</Text>
+      </Animated.View>
     </Pressable>
   );
 }
@@ -99,9 +113,9 @@ export function PrimaryButton({ title, onPress, disabled, testID, tone = "primar
 export function SecondaryButton({ title, onPress, testID }: { title: string; onPress: () => void; testID?: string }) {
   const s = useStyles();
   return (
-    <Pressable testID={testID} onPress={onPress} accessibilityRole="button" style={({ pressed }) => [s.btnSecondary, { opacity: pressed ? 0.8 : 1 }]}>
+    <PressableScale testID={testID} onPress={onPress} accessibilityRole="button" style={s.btnSecondary}>
       <Text style={s.btnSecondaryText}>{title}</Text>
-    </Pressable>
+    </PressableScale>
   );
 }
 
@@ -109,9 +123,9 @@ export function Card({ children, style, testID, onPress }: { children: React.Rea
   const s = useStyles();
   if (onPress) {
     return (
-      <Pressable testID={testID} onPress={onPress} style={({ pressed }) => [s.card, style, { opacity: pressed ? 0.9 : 1 }]}>
+      <PressableScale testID={testID} onPress={onPress} style={[s.card, style]}>
         {children}
-      </Pressable>
+      </PressableScale>
     );
   }
   return (
@@ -121,37 +135,52 @@ export function Card({ children, style, testID, onPress }: { children: React.Rea
   );
 }
 
-export function Pill({ label, active, onPress, testID, tone }: { label: string; active?: boolean; onPress?: () => void; testID?: string; tone?: string }) {
+// Selection control: active state uses `interactive` (selection), never the CTA gold.
+export function Pill({ label, active, onPress, testID }: { label: string; active?: boolean; onPress?: () => void; testID?: string }) {
   const s = useStyles();
   const { colors } = useTheme();
   return (
-    <Pressable
+    <PressableScale
       testID={testID}
       onPress={onPress}
-      style={[s.pill, { backgroundColor: active ? colors.brandPrimary : colors.surfaceTertiary, borderColor: active ? colors.brandPrimary : colors.border }]}
+      accessibilityRole="button"
+      accessibilityState={{ selected: !!active }}
+      style={[s.pill, { backgroundColor: active ? colors.interactive : colors.surfaceTertiary, borderColor: active ? colors.interactive : colors.border }]}
     >
-      <Text style={[s.pillText, { color: active ? colors.onBrandPrimary : colors.onSurfaceTertiary }]}>{label}</Text>
-    </Pressable>
+      <Text style={[s.pillText, { color: active ? colors.onInteractive : colors.onSurfaceTertiary }]}>{active ? "● " : ""}{label}</Text>
+    </PressableScale>
   );
 }
+
+// Colour-coded states always carry a glyph too (deuteranopia-safe).
+const BADGE_GLYPH = { success: "✓ ", warning: "! ", error: "✕ ", info: "", muted: "" };
 
 export function Badge({ label, tone = "info" }: { label: string; tone?: "success" | "warning" | "error" | "info" | "muted" }) {
   const s = useStyles();
   const { colors } = useTheme();
-  const map = { success: colors.success, warning: colors.warning, error: colors.error, info: colors.brandPrimary, muted: colors.muted };
+  const map = { success: colors.success, warning: colors.warning, error: colors.error, info: colors.info, muted: colors.muted };
   return (
     <View style={[s.badge, { backgroundColor: map[tone] + "22", borderColor: map[tone] }]}>
-      <Text style={[s.badgeText, { color: map[tone] }]}>{label}</Text>
+      <Text style={[s.badgeText, { color: map[tone] }]}>{BADGE_GLYPH[tone]}{label}</Text>
     </View>
   );
 }
 
+// Progression only: defaults to `progress`. Pass `tone` for leak/negative bars.
 export function ProgressBar({ value, tone }: { value: number; tone?: string }) {
   const s = useStyles();
   const { colors } = useTheme();
+  const motion = useMotionEnabled();
+  const pct = Math.max(0, Math.min(1, value)) * 100;
+  const w = useSharedValue(motion ? 0 : pct);
+  useEffect(() => {
+    w.value = motion ? withTiming(pct, { duration: 350, easing: Easing.out(Easing.cubic) }) : pct;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pct, motion]);
+  const fill = useAnimatedStyle(() => ({ width: `${w.value}%` }));
   return (
     <View style={s.progressTrack}>
-      <View style={[s.progressFill, { width: `${Math.max(0, Math.min(1, value)) * 100}%`, backgroundColor: tone ?? colors.brandPrimary }]} />
+      <Animated.View style={[s.progressFill, { backgroundColor: tone ?? colors.progress }, fill]} />
     </View>
   );
 }
@@ -166,7 +195,7 @@ export function Spinner({ label }: { label?: string }) {
   const { colors } = useTheme();
   return (
     <View style={s.spinner}>
-      <ActivityIndicator color={colors.brandPrimary} />
+      <ActivityIndicator color={colors.interactive} />
       {label ? <Text style={s.bodyMuted}>{label}</Text> : null}
     </View>
   );
@@ -182,9 +211,10 @@ const useStyles = makeStyles((c) => ({
   body: { color: c.onSurface, fontSize: 15, lineHeight: 22 },
   bodyMuted: { color: c.muted, fontSize: 15, lineHeight: 22 },
   kpi: { flexDirection: "row", backgroundColor: c.surfaceSecondary, borderRadius: radius.card, padding: spacing.lg, borderWidth: 1, borderColor: c.border, gap: spacing.md },
-  kpiBar: { width: 3, borderRadius: 2, backgroundColor: c.highlight },
+  kpiBar: { width: 3, borderRadius: 2, backgroundColor: c.border },
   kpiValue: { color: c.onSurface, fontSize: 26, fontWeight: "700", ...tabular },
   kpiDelta: { fontSize: 13, fontWeight: "600", marginTop: 2, ...tabular },
+  btnLip: { borderRadius: radius.md, paddingBottom: LIP },
   btn: { borderRadius: radius.md, paddingVertical: 15, alignItems: "center", justifyContent: "center", minHeight: 50 },
   btnText: { fontSize: 16, fontWeight: "700" },
   btnSecondary: { borderRadius: radius.md, paddingVertical: 14, alignItems: "center", borderWidth: 1, borderColor: c.border, backgroundColor: c.surfaceSecondary, minHeight: 48 },

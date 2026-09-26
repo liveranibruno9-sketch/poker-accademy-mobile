@@ -6,93 +6,125 @@ import { Appearance, StyleSheet, useColorScheme } from "react-native";
 
 export type ColorScheme = "light" | "dark";
 
+// Token semantics (one meaning per token, app-wide):
+//   brandPrimary  -> primary CTA only (gold)
+//   interactive   -> links, focus, selection, "who acts" cues
+//   reward        -> session score / points / currency
+//   progress      -> progression, XP, progress bars
+//   rare          -> levels, unlocks, achievements (max 1 screen in 5)
+//   streak        -> daily streak
+//   highlight     -> numeric data emphasis inside content (never running text)
+//   felt/feltCenter -> the playing surface only (dark green in both themes)
 const dark = {
   // Surfaces
-  surface: "#0B1D3A", // navy base, app background
+  surface: "#0A0E14", // app background
   onSurface: "#EEF2F8", // off-white primary text
-  surfaceSecondary: "#16305A", // navy 2, cards / sheets / sub-header
+  surfaceSecondary: "#121826", // cards / sheets / sub-header
   onSurfaceSecondary: "#EEF2F8",
-  surfaceTertiary: "#081730", // navy 3, table felt / deepest fills
-  onSurfaceTertiary: "#7C8AA5",
+  surfaceTertiary: "#1B2436", // deepest fills, tracks
+  onSurfaceTertiary: "#9AA7BD",
   surfaceInverse: "#EEF2F8",
-  onSurfaceInverse: "#1A2332",
-  muted: "#7C8AA5", // grey labels, secondary text
+  onSurfaceInverse: "#0F1622",
+  muted: "#9AA7BD", // grey labels, secondary text
 
   // Brand / accent
-  brand: "#5B9BD5",
-  onBrand: "#08152B",
-  brandPrimary: "#5B9BD5", // accent blue, CTA, focus
-  onBrandPrimary: "#08152B",
-  brandSecondary: "#16305A",
+  brand: "#FFC53D",
+  onBrand: "#1A1206",
+  brandPrimary: "#FFC53D", // gold, primary CTA
+  onBrandPrimary: "#1A1206",
+  brandSecondary: "#1B2436",
   onBrandSecondary: "#EEF2F8",
-  brandTertiary: "#1E3D6E", // chips, tags
-  onBrandTertiary: "#8FC0EA",
+  brandTertiary: "#23304A", // chips, tags
+  onBrandTertiary: "#9AA7BD",
 
   // Status
-  success: "#1FA971",
-  onSuccess: "#FFFFFF",
-  warning: "#E0A64B",
-  onWarning: "#1A2332",
-  error: "#E0574B",
+  success: "#22D3A6",
+  onSuccess: "#04231A",
+  warning: "#FFA23A",
+  onWarning: "#241200",
+  error: "#FF4D5E",
   onError: "#FFFFFF",
-  info: "#5B9BD5",
-  onInfo: "#08152B",
+  info: "#4EA8FF",
+  onInfo: "#04121F",
 
   // Lines
-  border: "#24406B",
-  borderStrong: "#5B9BD5",
-  divider: "#1B345E",
+  border: "#1F2A3D",
+  borderStrong: "#4EA8FF",
+  divider: "#1A2333",
 
   // Custom app tokens
-  highlight: "#8FC0EA", // light blue, data highlight
-  felt: "#081730", // table felt
+  highlight: "#4EA8FF", // data highlight
+  felt: "#0E3B2E", // table felt (edge)
+  feltCenter: "#14523D", // table felt (center of radial gradient)
+  onFelt: "#EEF2F8", // text drawn directly on the felt (both themes)
   cardFace: "#FFFFFF",
-  cardRed: "#E0574B",
-  cardBlack: "#1A2332",
-  positive: "#1FA971",
-  negative: "#E0574B",
+  cardRed: "#FF4D5E",
+  cardBlack: "#0F1622",
+  positive: "#22D3A6",
+  negative: "#FF4D5E",
+
+  // Game-feel tokens
+  reward: "#FFC53D",
+  onReward: "#1A1206",
+  progress: "#22D3A6",
+  rare: "#A855F7",
+  streak: "#FF7A1A",
+  interactive: "#4EA8FF",
+  onInteractive: "#04121F",
+  scrim: "#000000A6", // modal backdrop
 };
 
 const light: typeof dark = {
-  surface: "#EEF2F8",
-  onSurface: "#1A2332",
+  surface: "#F7F9FC",
+  onSurface: "#0F1622",
   surfaceSecondary: "#FFFFFF",
-  onSurfaceSecondary: "#1A2332",
-  surfaceTertiary: "#DCE4F0",
-  onSurfaceTertiary: "#5A6B85",
-  surfaceInverse: "#16305A",
-  onSurfaceInverse: "#EEF2F8",
-  muted: "#5A6B85",
+  onSurfaceSecondary: "#0F1622",
+  surfaceTertiary: "#EEF2F8",
+  onSurfaceTertiary: "#5A6A82",
+  surfaceInverse: "#0F1622",
+  onSurfaceInverse: "#F7F9FC",
+  muted: "#5A6A82",
 
-  brand: "#2E6BB0",
+  brand: "#B8860B",
   onBrand: "#FFFFFF",
-  brandPrimary: "#2E6BB0",
+  brandPrimary: "#B8860B",
   onBrandPrimary: "#FFFFFF",
-  brandSecondary: "#DCE4F0",
-  onBrandSecondary: "#1A2332",
-  brandTertiary: "#DCE4F0",
-  onBrandTertiary: "#1A2332",
+  brandSecondary: "#EEF2F8",
+  onBrandSecondary: "#0F1622",
+  brandTertiary: "#E3E9F2",
+  onBrandTertiary: "#0F1622",
 
-  success: "#1FA971",
+  success: "#0F9B7A",
   onSuccess: "#FFFFFF",
-  warning: "#C8862B",
-  onWarning: "#FFFFFF",
-  error: "#D2493C",
+  warning: "#D98218",
+  onWarning: "#241200", // white on #D98218 is 2.9:1; dark ink keeps 6.5:1
+  error: "#D2394A",
   onError: "#FFFFFF",
   info: "#2E6BB0",
   onInfo: "#FFFFFF",
 
-  border: "#CDD8E8",
+  border: "#D5DDE8",
   borderStrong: "#2E6BB0",
-  divider: "#DCE4F0",
+  divider: "#E3E9F2",
 
   highlight: "#2E6BB0",
-  felt: "#C9D6E8",
+  felt: "#0E3B2E", // playing surface stays dark green in light theme
+  feltCenter: "#14523D",
+  onFelt: "#EEF2F8",
   cardFace: "#FFFFFF",
-  cardRed: "#D2493C",
-  cardBlack: "#1A2332",
-  positive: "#1FA971",
-  negative: "#D2493C",
+  cardRed: "#D2394A",
+  cardBlack: "#0F1622",
+  positive: "#0F9B7A",
+  negative: "#D2394A",
+
+  reward: "#B8860B",
+  onReward: "#FFFFFF",
+  progress: "#0F9B7A",
+  rare: "#7C3AED",
+  streak: "#D35400",
+  interactive: "#2E6BB0",
+  onInteractive: "#FFFFFF",
+  scrim: "#0F162299",
 };
 
 export type ThemeColors = typeof dark;
@@ -125,6 +157,18 @@ export function makeStyles<T extends StyleSheet.NamedStyles<T> | StyleSheet.Name
     const { colors } = useTheme();
     return useMemo(() => StyleSheet.create(factory(colors)), [colors]);
   };
+}
+
+// Derive a darker/lighter variant of a token at runtime (amount in -1..1).
+// Used for the pressed "lip" of primary buttons so no extra literals are needed.
+export function shade(hex: string, amount: number): string {
+  const h = hex.replace("#", "").slice(0, 6);
+  const n = parseInt(h, 16);
+  const ch = (v: number) => Math.max(0, Math.min(255, Math.round(v * (1 + amount))));
+  const r = ch((n >> 16) & 255);
+  const g = ch((n >> 8) & 255);
+  const b = ch(n & 255);
+  return "#" + [r, g, b].map((x) => x.toString(16).padStart(2, "0")).join("");
 }
 
 export const spacing = { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 24, xxxl: 32 };

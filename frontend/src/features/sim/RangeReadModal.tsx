@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { Modal, Text, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { makeStyles, spacing, tabular, useTheme } from "@/src/theme";
+import { makeStyles, spacing, tabular } from "@/src/theme";
 import { it } from "@/src/i18n/it";
 import { RangeGrid13x13 } from "@/src/viz/RangeGrid";
 import { cellCombos, emptyRange, rangePercent, totalWeight } from "@/src/engine/ranges";
@@ -9,7 +9,6 @@ import { Heading, Pill, PrimaryButton, SecondaryButton, SectionLabel } from "@/s
 
 export function RangeReadModal({ visible, onSubmit, onSkip }: { visible: boolean; onSubmit: (w: Float32Array) => void; onSkip: () => void }) {
   const s = useStyles();
-  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const [weights, setWeights] = useState<Float32Array>(() => emptyRange());

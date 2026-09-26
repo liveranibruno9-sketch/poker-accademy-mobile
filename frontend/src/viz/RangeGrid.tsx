@@ -45,7 +45,7 @@ export function RangeGrid13x13({
     const w = weights ? cellWeight(weights, row, col) : 0;
     if (w > 0.05) {
       const alpha = Math.round(60 + w * 195).toString(16).padStart(2, "0");
-      return { bg: colors.brandPrimary + alpha, label: colors.onSurface };
+      return { bg: colors.highlight + alpha, label: colors.onSurface };
     }
     return { bg: colors.surfaceTertiary, label: colors.muted };
   }

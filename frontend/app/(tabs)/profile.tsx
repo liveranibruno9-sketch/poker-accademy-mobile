@@ -4,7 +4,7 @@ import { useRouter } from "expo-router";
 import { Body, Card, Heading, Pill, PrimaryButton, ScreenContainer, SecondaryButton, SectionLabel } from "@/src/ui/components";
 import { makeStyles, spacing, useTheme } from "@/src/theme";
 import { it } from "@/src/i18n/it";
-import { ThemePref, useApp, VerdictMode } from "@/src/store/appStore";
+import { ReduceMotionPref, ThemePref, useApp, VerdictMode } from "@/src/store/appStore";
 
 export default function ProfileScreen() {
   const s = useStyles();
@@ -52,6 +52,16 @@ export default function ProfileScreen() {
         </View>
       </Card>
 
+      <Card style={{ marginTop: spacing.md }} testID="reduce-motion-card">
+        <SectionLabel>{it.profile.reduceMotion}</SectionLabel>
+        <View style={s.row}>
+          {([["system", it.profile.reduceSystem], ["on", it.profile.reduceOn], ["off", it.profile.reduceOff]] as [ReduceMotionPref, string][]).map(([id, label]) => (
+            <Pill key={id} label={label} active={profile.reduceMotion === id} onPress={() => setProfile({ reduceMotion: id })} testID={`reduce-motion-${id}`} />
+          ))}
+        </View>
+        <Body muted style={{ marginTop: spacing.sm, fontSize: 12 }}>{it.profile.reduceMotionHint}</Body>
+      </Card>
+
       <Card style={{ marginTop: spacing.md }} onPress={() => router.push("/glossary")} testID="open-glossary">
         <Text style={s.link}>{it.profile.glossary} →</Text>
       </Card>
@@ -96,8 +106,8 @@ export default function ProfileScreen() {
 
 const useStyles = makeStyles((c) => ({
   row: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.sm, flexWrap: "wrap" },
-  link: { color: c.brandPrimary, fontSize: 15, fontWeight: "600" },
-  modalBackdrop: { flex: 1, backgroundColor: "#00000099", justifyContent: "center", padding: spacing.xl },
+  link: { color: c.interactive, fontSize: 15, fontWeight: "600" },
+  modalBackdrop: { flex: 1, backgroundColor: c.scrim, justifyContent: "center", padding: spacing.xl },
   modalCard: { backgroundColor: c.surfaceSecondary, borderRadius: 16, padding: spacing.xl, borderWidth: 1, borderColor: c.border },
   json: { color: c.muted, fontSize: 11, fontFamily: "monospace" },
 }));

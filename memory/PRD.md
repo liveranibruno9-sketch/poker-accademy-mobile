@@ -29,6 +29,15 @@ App mobile "Poker Academy": trainer di Texas Hold'em No Limit 6-max cash (micro 
 - Profilo: tema (dark default + light + system), verdetto immediato/differito, timer, reset con doppia conferma, export JSON, gioco responsabile.
 - Glossario tappabile collegato alle lezioni.
 
+## Revisione 1 — palette & juice (2026-06-26)
+- `src/theme.ts`: valori dark/light sostituiti (oro #FFC53D CTA, teal success/progress, blu interactive, superfici near-black); `felt` verde scuro in entrambi i temi.
+- Token nuovi: `feltCenter, reward, onReward, progress, rare, streak, interactive, onInteractive, scrim, onFelt` + helper `shade()`.
+- Migrazione d'uso: `interactive` = link/focus/selezione (Pill attiva, tab attiva, opzione quiz, livello onboarding, bordo "a chi tocca"); `brandPrimary` = solo CTA/Bet-Raise; `reward` = punteggio; `progress` = barre; `highlight` = dato numerico nei contenuti.
+- Tavolo: sfondo radiale SVG `feltCenter → felt`, hero pod con bordo `interactive` quando tocca a te.
+- Juice (`src/ui/motion.tsx`, `src/ui/haptics.ts`): PressableScale (0.96/80ms + spring), CountUp (250–400ms), FlashView (150–300ms), PrimaryButton con lip inferiore; haptics light su conferma / medium-notification su esito.
+- Profilo → "Riduci animazioni" (Sistema/Sì/No) persistito in `profile.reduceMotion`, rispetta `AccessibilityInfo.isReduceMotionEnabled`.
+- Ogni stato colorato porta anche glifo (✓ ! ✕ ▶ ●). Zero colori hardcoded fuori da theme.ts.
+
 ## Backlog (prioritized)
 - **P0**: —
 - **P1**: EV via rollout multi-strada completo (attuale: modello in forma chiusa, vedi DECISIONS.md); replay mano con "rigioca da qui"; export report come immagine (react-native-view-shot).

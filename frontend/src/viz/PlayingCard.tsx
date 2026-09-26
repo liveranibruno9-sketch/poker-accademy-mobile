@@ -22,7 +22,7 @@ export function PlayingCard({ card, size = "board", faceDown = false }: { card?:
   if (faceDown || !card) {
     return (
       <Svg width={w} height={h}>
-        <Rect x={1} y={1} width={w - 2} height={h - 2} rx={6} fill={colors.surfaceSecondary} stroke={colors.brandPrimary} strokeWidth={1} />
+        <Rect x={1} y={1} width={w - 2} height={h - 2} rx={6} fill={colors.surfaceSecondary} stroke={colors.borderStrong} strokeWidth={1} />
         <Rect x={5} y={5} width={w - 10} height={h - 10} rx={4} fill="none" stroke={colors.brandTertiary} strokeWidth={1} strokeDasharray="3 3" />
       </Svg>
     );
@@ -34,7 +34,7 @@ export function PlayingCard({ card, size = "board", faceDown = false }: { card?:
   const fontSize = w * 0.42;
   return (
     <Svg width={w} height={h}>
-      <Rect x={1} y={1} width={w - 2} height={h - 2} rx={6} fill={colors.cardFace} stroke={"#00000022"} strokeWidth={1} />
+      <Rect x={1} y={1} width={w - 2} height={h - 2} rx={6} fill={colors.cardFace} stroke={colors.cardBlack + "22"} strokeWidth={1} />
       <SvgText x={w * 0.16} y={h * 0.34} fontSize={fontSize} fontWeight="700" fill={ink} textAnchor="start">
         {rank}
       </SvgText>

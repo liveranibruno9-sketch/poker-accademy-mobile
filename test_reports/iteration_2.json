@@ -1,0 +1,30 @@
+{
+  "summary": "Full regression pass on Poker Academy after Revision 1 (palette swap + reanimated 'juice' + reduce-motion setting). All critical flows work with no console/runtime errors and no red screen. Verified: onboarding (3 steps, level-intuitive), home (study-screen, KPI, module-M1 progress bar, lesson-row-L01), lesson L01 blocks + go-to-quiz, quiz (quiz-option-0 selection with blue ● glyph, quiz-check, quiz-next, quiz-result-screen with donut chart), simulator setup (mode-rated/hands-10/comp-realistic/stack-100 pills toggle correctly with blue active state + ● prefix, start-session), table (dark-green radial felt rgb(14,59,46) = #0E3B2E, table-score/table-pot/hero-stack render non-NaN numbers, action-fold/check/call/bet + size-* buttons all clickable and advance hands, verdict-sheet appears in rated+immediate with verdict-score numeric (97.0, 96.5, 93.4, 83.4...), verdict-continue works, next-hand loop, session correctly auto-terminates at score <50), report (report-screen, report-score 38.1 in gold, KPI grid mani/errori/EV/decisioni corrette, timeline, report-done returns to study-screen), profile (theme-light switches home bg to #F7F9FC and, when opening table in light theme, felt STAYS dark green #0E3B2E with light on-felt text - correctly implemented; theme-dark restores; new reduce-motion-card with reduce-motion-system/on/off pills toggles and persists after reload; open-glossary opens glossary with glossary-search input). No NaN found anywhere, no freezes after taps, no red error screen, no worklet errors, no reanimated errors. Iteration 1's react-native-svg 'Unknown event handler property onResponder*' console spam was NOT observed on this run (likely because we did not open the Stats screen which renders the responder-emitting Svg pressables; report timeline uses a simpler Svg). No new regressions introduced by PressableScale / CountUp / FlashView / PrimaryButton lip. No modifications made to theme.ts.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "report-screen", "issues": ["When session is auto-interrupted at score < 50 the banner 'Sessione interrotta: punteggio sotto 50' still displays but the timeline/KPIs are populated normally. Cosmetically fine; carryover item from iteration 1 - not a regression."]}
+    ],
+    "react_native_issues": []
+  },
+  "test_report_links": ["/app/test_reports/iteration_1.json", "/app/test_reports/iteration_2.json"],
+  "action_items": [
+    "None required. Revision 1 is functionally clean. Consider carrying forward iteration 1's open items (silence react-native-svg onResponder* warnings in src/viz/charts.tsx when Stats screen is opened; migrate remaining Touchable* to Pressable; fix 'Conta' -> 'conta' typo in sim-setup helper).",
+    "Optional: expose testID on the bottom tab items (nav-study / nav-sim / nav-stats / nav-profile) via tabBarButtonTestID in app/(tabs)/_layout.tsx to make agentic testing simpler (currently only reachable via /sim, /profile URLs)."
+  ],
+  "critical_code_review_comments": [
+    "src/theme.ts: light theme keeps felt at #0E3B2E and onFelt at #EEF2F8 - confirmed rendered correctly on the table in light theme, so text on felt remains readable.",
+    "src/ui/motion.tsx PressableScale wraps Pressable with an animated transform; onPress is dispatched synchronously so taps never feel delayed. Verified all action-* and pill taps respond immediately (loop of 27 taps to reach report with no missed clicks).",
+    "CountUp uses useAnimatedReaction+runOnJS(setDisplay) - correctly re-renders numeric strings (table-score changed 100.0 -> 97.0 -> 96.5 -> ... -> 38.1 without a NaN or jump).",
+    "profile.tsx reduce-motion-card persists (verified after reload the 'reduce-motion-on' pill is still mounted; user preference stored in appStore under profile.reduceMotion)."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (frontend only)", "frontend": "100%"},
+  "seed_data_creation": "None. App is fully offline; state is per-browser-context (localStorage key poker_academy_state_v3).",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Bottom tabs have no testIDs, so navigate between tabs via URL (goto /sim, /profile, /stats). Onboarding must be walked every fresh browser context (3 x onboarding-next; select level-intuitive on step 2 before the second Continua). Rated sessions auto-terminate at score < 50 which surfaces go-report; otherwise use hands-10 to reach report fast. In the play loop handle four kinds of blocking UI in this priority: range-read-modal (range-skip/range-confirm) -> verdict-sheet (verdict-continue) -> next-hand -> go-report -> action-check/call/fold. Theme in light: home bg = rgb(247,249,252); table bg stays rgb(14,59,46). Reduce-motion pills: reduce-motion-system/on/off.",
+  "rca_of_issue": "N/A - no bug found in this iteration."
+}

@@ -13,6 +13,7 @@ const REVIEW_INTERVALS = [1, 3, 7, 16, 35]; // days, SM-2 simplified
 export type Level = "novice" | "intuitive" | "basics";
 export type ThemePref = "system" | "dark" | "light";
 export type VerdictMode = "immediate" | "endOfHand";
+export type ReduceMotionPref = "system" | "on" | "off";
 
 export interface Profile {
   onboarded: boolean;
@@ -21,6 +22,7 @@ export interface Profile {
   verdictMode: VerdictMode;
   timerSec: number;
   hudEnabled: boolean;
+  reduceMotion: ReduceMotionPref;
   createdAt: string;
 }
 
@@ -109,6 +111,7 @@ function defaultProfile(): Profile {
     verdictMode: "immediate",
     timerSec: 25,
     hudEnabled: true,
+    reduceMotion: "system",
     createdAt: new Date().toISOString(),
   };
 }

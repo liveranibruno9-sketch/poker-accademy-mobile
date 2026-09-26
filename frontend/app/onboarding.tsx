@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { View } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import * as Haptics from "expo-haptics";
 import { Body, Card, Heading, PrimaryButton, SectionLabel } from "@/src/ui/components";
 import { makeStyles, spacing, useTheme } from "@/src/theme";
 import { it } from "@/src/i18n/it";
@@ -28,7 +27,6 @@ export default function Onboarding() {
   const isLast = step === STEPS.length - 1;
 
   const onNext = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     if (isLast) {
       complete(level);
       router.replace("/(tabs)");
@@ -39,7 +37,7 @@ export default function Onboarding() {
     <View style={[s.root, { paddingTop: insets.top + spacing.xxl, paddingBottom: insets.bottom + spacing.xl }]}>
       <View style={s.dots}>
         {STEPS.map((_, i) => (
-          <View key={i} style={[s.dot, { backgroundColor: i <= step ? colors.brandPrimary : colors.surfaceTertiary }]} />
+          <View key={i} style={[s.dot, { backgroundColor: i <= step ? colors.progress : colors.surfaceTertiary }]} />
         ))}
       </View>
 
@@ -61,8 +59,8 @@ export default function Onboarding() {
               ["intuitive", it.onboarding.levelIntuitive],
               ["basics", it.onboarding.levelBasics],
             ] as [Level, string][]).map(([id, label]) => (
-              <Card key={id} onPress={() => setLevel(id)} testID={`level-${id}`} style={level === id ? { borderColor: colors.brandPrimary, borderWidth: 2 } : undefined}>
-                <Body style={{ fontWeight: level === id ? "700" : "500" }}>{label}</Body>
+              <Card key={id} onPress={() => setLevel(id)} testID={`level-${id}`} style={level === id ? { borderColor: colors.interactive, borderWidth: 2 } : undefined}>
+                <Body style={{ fontWeight: level === id ? "700" : "500" }}>{level === id ? "● " : "○ "}{label}</Body>
               </Card>
             ))}
           </View>

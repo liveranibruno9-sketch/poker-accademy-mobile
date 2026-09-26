@@ -19,9 +19,9 @@ export function PotOddsBar({ pot = 100, bet = 50, width = W }: { pot?: number; b
       <Svg width={width} height={h}>
         <Rect x={0} y={0} width={potW} height={h} rx={4} fill={colors.brandTertiary} />
         <Rect x={potW} y={0} width={betW} height={h} fill={colors.warning} />
-        <Rect x={potW + betW} y={0} width={callW} height={h} rx={4} fill={colors.brandPrimary} />
+        <Rect x={potW + betW} y={0} width={callW} height={h} rx={4} fill={colors.highlight} />
       </Svg>
-      <LegendRow items={[["Piatto", colors.brandTertiary], ["Puntata", colors.warning], ["Il tuo call", colors.brandPrimary]]} />
+      <LegendRow items={[["Piatto", colors.brandTertiary], ["Puntata", colors.warning], ["Il tuo call", colors.highlight]]} />
       <Text style={{ color: colors.highlight, fontWeight: "700", ...tabular }}>Equity richiesta: {req.toFixed(1)}%</Text>
     </View>
   );
@@ -109,7 +109,7 @@ export function EvBarChart({ actions, width = W }: { actions: { label: string; e
                   width={len}
                   height={rowH - 12}
                   rx={2}
-                  fill={isBest ? colors.positive : positive ? colors.brandPrimary : colors.negative}
+                  fill={isBest ? colors.positive : positive ? colors.highlight : colors.negative}
                 />
               </Svg>
             </View>
@@ -134,7 +134,7 @@ export function ScoreTimeline({ timeline, width = W }: { timeline: number[]; wid
   return (
     <Svg width={width} height={h}>
       <Line x1={pad} y1={y(50)} x2={width - pad} y2={y(50)} stroke={colors.warning} strokeWidth={1} strokeDasharray="4 4" />
-      <Path d={d} stroke={colors.brandPrimary} strokeWidth={2} fill="none" />
+      <Path d={d} stroke={colors.highlight} strokeWidth={2} fill="none" />
       {pts.map((v, i) => (
         <Circle key={i} cx={x(i)} cy={y(v)} r={i === 0 ? 2 : 4} fill={i > 0 && timeline[i - 1] < (timeline[i - 2] ?? 100) ? colors.negative : colors.highlight} />
       ))}
@@ -147,7 +147,7 @@ export function CombosMatrix({ width = W }: { width?: number }) {
   const { colors } = useTheme();
   const items = [
     { label: "Coppia", n: 6, color: colors.positive },
-    { label: "Suited", n: 4, color: colors.brandPrimary },
+    { label: "Suited", n: 4, color: colors.highlight },
     { label: "Offsuit", n: 12, color: colors.warning },
   ];
   return (

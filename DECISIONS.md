@@ -24,6 +24,14 @@ Scelte tecniche e deviazioni rigorose rispetto al brief, con motivazione.
 ## i18n / Tema
 - Tutte le stringhe in `src/i18n/it.ts`. Tema dark di default (override `schemeOverride` in `theme.ts` per garantire dark-first anche dove `Appearance.setColorScheme` è no-op). Tema light completo.
 
+## Palette v2 (Revisione 1)
+- Da brand B2B navy/azzurro a palette da gioco di apprendimento: superfici near-black (#0A0E14/#121826/#1B2436), oro #FFC53D come CTA e ricompensa, teal #22D3A6 per successo/progressione, blu #4EA8FF per interazione/selezione/dati.
+- Un token = un significato: `brandPrimary` CTA, `interactive` link/focus/selezione, `reward` punteggio, `progress` barre, `rare` achievement, `streak` streak, `highlight` numero-dato. Il testo di lettura è sempre `onSurface`/`muted`.
+- `felt`/`feltCenter` restano verdi anche in tema chiaro: è la superficie di gioco, non lo sfondo app. Il testo sul feltro usa `onFelt` (fisso chiaro) per non dipendere dal tema.
+- Ogni stato codificato a colore porta anche un glifo (✓ corretto, ! imprecisione/letto, ✕ errore, ▶ disponibile, ● selezionato): informazione preservata in deuteranopia.
+- Contrasto verificato (WCAG): tema dark tutto ≥ 4.5:1 tranne `onError` su `error` (3.2:1, usato solo per glifi/testo bold ≥ 16px). Tema chiaro: gli accenti richiesti dal brief (#B8860B, #0F9B7A, #D98218) su bianco stanno tra 2.8 e 3.5:1 → usati solo per bordi, glifi, barre e testo bold grande; `onWarning` chiaro impostato a #241200 (6.5:1) perché il bianco su #D98218 non raggiungeva 3:1.
+- Juice con reanimated: le animazioni sono solo visive, `onPress` scatta in modo sincrono; tutto disattivabile da Profilo o dall'impostazione di sistema.
+
 ## Fuori scope v1 (come da brief)
 - Nessun backend, login, denaro reale, IAP, ads, multiplayer. `SyncProvider` predisposto (`services/sync.ts`).
 - Contenuto reale solo per M1 (10 lezioni). M2–M8 scheletro "in arrivo".

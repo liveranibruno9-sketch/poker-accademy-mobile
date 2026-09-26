@@ -119,7 +119,7 @@ export default function StatsScreen() {
             return (
               <View key={k} style={s.statRow}>
                 <Text style={s.statLabel}>{k}</Text>
-                <Text style={[s.statVal, { color: inBand ? colors.positive : colors.warning }]}>{v}% {band ? `(rif. ${band[0]}–${band[1]}%)` : ""}</Text>
+                <Text style={s.statVal}><Text style={{ color: inBand ? colors.positive : colors.warning, fontWeight: "800" }}>{inBand ? "✓ " : "! "}</Text>{v}% {band ? `(rif. ${band[0]}–${band[1]}%)` : ""}</Text>
               </View>
             );
           })}
@@ -135,10 +135,11 @@ export default function StatsScreen() {
               const m = conceptMastery[cpt];
               const score = m?.score ?? 0;
               const bg = score >= 60 ? colors.positive : score >= 30 ? colors.warning : colors.surfaceTertiary;
+              const glyph = score >= 60 ? "✓" : score >= 30 ? "!" : "–";
               return (
                 <View key={cpt} style={[s.heatCell, { backgroundColor: bg + "44", borderColor: bg }]}>
                   <Text style={s.heatLabel}>{cpt}</Text>
-                  <Text style={s.heatScore}>{score}</Text>
+                  <Text style={s.heatScore}>{glyph} {score}</Text>
                 </View>
               );
             })}

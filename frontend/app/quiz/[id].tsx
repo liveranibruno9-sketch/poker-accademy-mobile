@@ -1,8 +1,9 @@
 import React, { useState } from "react";
-import { Pressable, Text, TextInput, View } from "react-native";
+import { Text, TextInput, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import * as Haptics from "expo-haptics";
+import { haptic } from "@/src/ui/haptics";
+import { PressableScale } from "@/src/ui/motion";
 import { Body, Card, Heading, PrimaryButton, SecondaryButton, SectionLabel } from "@/src/ui/components";
 import { makeStyles, spacing, useTheme } from "@/src/theme";
 import { it } from "@/src/i18n/it";
@@ -44,7 +45,8 @@ export default function QuizScreen() {
   const onCheck = () => {
     const ok = isCorrect();
     setRevealed(true);
-    Haptics.notificationAsync(ok ? Haptics.NotificationFeedbackType.Success : Haptics.NotificationFeedbackType.Error).catch(() => {});
+    if (ok) haptic.success();
+    else haptic.error();
     if (ok) setCorrectCount((x) => x + 1);
     else setWrongConcepts((w) => [...w, q.concept]);
     recordConcept(q.concept, ok);
@@ -120,18 +122,20 @@ export default function QuizScreen() {
               const showCorrect = revealed && i === q.correctIndex;
               const showWrong = revealed && isSel && i !== q.correctIndex;
               return (
-                <Pressable
+                <PressableScale
                   key={i}
                   testID={`quiz-option-${i}`}
                   disabled={revealed}
                   onPress={() => setSelected(i)}
+                  accessibilityState={{ selected: isSel }}
                   style={[
                     s.option,
-                    { borderColor: showCorrect ? colors.positive : showWrong ? colors.negative : isSel ? colors.brandPrimary : colors.border, backgroundColor: isSel ? colors.brandPrimary + "18" : colors.surfaceSecondary },
+                    { borderColor: showCorrect ? colors.positive : showWrong ? colors.negative : isSel ? colors.interactive : colors.border, backgroundColor: isSel ? colors.interactive + "18" : colors.surfaceSecondary },
                   ]}
                 >
                   <Text style={s.optionText}>{opt}</Text>
-                </Pressable>
+                  {showCorrect ? <Text style={[s.optionMark, { color: colors.positive }]}>✓</Text> : showWrong ? <Text style={[s.optionMark, { color: colors.negative }]}>✕</Text> : isSel ? <Text style={[s.optionMark, { color: colors.interactive }]}>●</Text> : null}
+                </PressableScale>
               );
             })}
           </View>
@@ -140,7 +144,7 @@ export default function QuizScreen() {
         {revealed ? (
           <Card style={{ marginTop: spacing.xl, borderColor: isCorrect() ? colors.positive : colors.negative, borderWidth: 1 }}>
             <Text style={{ color: isCorrect() ? colors.positive : colors.negative, fontWeight: "700", marginBottom: 6 }}>
-              {isCorrect() ? it.quiz.correct : it.quiz.wrong}
+              {isCorrect() ? "✓ " : "✕ "}{isCorrect() ? it.quiz.correct : it.quiz.wrong}
             </Text>
             <Body>{q.explain}</Body>
             {!isCorrect() && q.kind === "single" && selected != null ? (
@@ -167,6 +171,7 @@ const useStyles = makeStyles((c) => ({
   numericRow: { flexDirection: "row", alignItems: "center", gap: spacing.md },
   numericInput: { flex: 1, backgroundColor: c.surfaceSecondary, borderWidth: 1, borderColor: c.border, borderRadius: 12, padding: spacing.lg, color: c.onSurface, fontSize: 22, fontWeight: "700" },
   unit: { color: c.muted, fontSize: 18, fontWeight: "600" },
-  option: { borderWidth: 1, borderRadius: 12, padding: spacing.lg },
-  optionText: { color: c.onSurface, fontSize: 15, fontWeight: "500" },
+  option: { borderWidth: 1, borderRadius: 12, padding: spacing.lg, flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  optionText: { color: c.onSurface, fontSize: 15, fontWeight: "500", flex: 1 },
+  optionMark: { fontSize: 16, fontWeight: "800" },
 }));

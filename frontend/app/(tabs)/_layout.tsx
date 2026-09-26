@@ -37,7 +37,7 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.brandPrimary,
+        tabBarActiveTintColor: colors.interactive,
         tabBarInactiveTintColor: colors.muted,
         tabBarStyle: {
           backgroundColor: colors.surfaceSecondary,
@@ -48,10 +48,10 @@ export default function TabsLayout() {
         tabBarLabelStyle: { fontSize: 11, fontWeight: "600" },
       }}
     >
-      <Tabs.Screen name="index" options={{ title: it.tabs.study, tabBarIcon: ({ color }) => <IconStudy color={color} /> }} />
-      <Tabs.Screen name="sim" options={{ title: it.tabs.sim, tabBarIcon: ({ color }) => <IconSim color={color} /> }} />
-      <Tabs.Screen name="stats" options={{ title: it.tabs.stats, tabBarIcon: ({ color }) => <IconStats color={color} /> }} />
-      <Tabs.Screen name="profile" options={{ title: it.tabs.profile, tabBarIcon: ({ color }) => <IconProfile color={color} /> }} />
+      <Tabs.Screen name="index" options={{ title: it.tabs.study, tabBarButtonTestID: "nav-study", tabBarIcon: ({ color }) => <IconStudy color={color} /> }} />
+      <Tabs.Screen name="sim" options={{ title: it.tabs.sim, tabBarButtonTestID: "nav-sim", tabBarIcon: ({ color }) => <IconSim color={color} /> }} />
+      <Tabs.Screen name="stats" options={{ title: it.tabs.stats, tabBarButtonTestID: "nav-stats", tabBarIcon: ({ color }) => <IconStats color={color} /> }} />
+      <Tabs.Screen name="profile" options={{ title: it.tabs.profile, tabBarButtonTestID: "nav-profile", tabBarIcon: ({ color }) => <IconProfile color={color} /> }} />
     </Tabs>
   );
 }

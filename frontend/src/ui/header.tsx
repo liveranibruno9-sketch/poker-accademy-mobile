@@ -3,7 +3,7 @@ import { Pressable, Text, View } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import { makeStyles, spacing, useTheme } from "@/src/theme";
 
-export function HeaderBar({ title, onBack, right }: { title: string; onBack?: () => void; right?: React.ReactNode }) {
+export function HeaderBar({ title, onBack, right, tint }: { title: string; onBack?: () => void; right?: React.ReactNode; tint?: string }) {
   const s = useStyles();
   const { colors } = useTheme();
   return (
@@ -11,13 +11,13 @@ export function HeaderBar({ title, onBack, right }: { title: string; onBack?: ()
       {onBack ? (
         <Pressable onPress={onBack} hitSlop={12} testID="header-back" style={s.backBtn}>
           <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-            <Path d="M15 6l-6 6 6 6" stroke={colors.onSurface} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+            <Path d="M15 6l-6 6 6 6" stroke={tint ?? colors.onSurface} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
           </Svg>
         </Pressable>
       ) : (
         <View style={s.backBtn} />
       )}
-      <Text style={s.title} numberOfLines={1}>{title}</Text>
+      <Text style={[s.title, tint ? { color: tint } : null]} numberOfLines={1}>{title}</Text>
       <View style={s.right}>{right}</View>
     </View>
   );

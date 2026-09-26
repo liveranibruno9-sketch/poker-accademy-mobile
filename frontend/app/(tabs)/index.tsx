@@ -1,12 +1,13 @@
 import React from "react";
-import { Text, View, Pressable } from "react-native";
+import { Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { Badge, Body, Card, Heading, PrimaryButton, ProgressBar, ScreenContainer, SectionLabel, StatValue } from "@/src/ui/components";
-import { makeStyles, spacing, useTheme } from "@/src/theme";
+import { makeStyles, spacing, tabular, useTheme } from "@/src/theme";
 import { it } from "@/src/i18n/it";
 import { averageScore, conceptsDue, moduleProgress, useApp } from "@/src/store/appStore";
 import { getLesson, lessonsForModule, MODULES } from "@/src/content/curriculum";
 import { IconChevron, IconLock } from "@/src/ui/icons";
+import { PressableScale } from "@/src/ui/motion";
 
 export default function StudyHome() {
   const s = useStyles();
@@ -67,19 +68,19 @@ export default function StudyHome() {
                   const lp = lessonProgress[l.id];
                   const locked = !lp || lp.status === "locked";
                   return (
-                    <Pressable
+                    <PressableScale
                       key={l.id}
                       testID={`lesson-row-${l.id}`}
                       disabled={locked}
                       onPress={() => router.push(`/lesson/${l.id}`)}
-                      style={({ pressed }) => [s.lessonRow, { opacity: pressed ? 0.7 : 1 }]}
+                      style={s.lessonRow}
                     >
-                      <View style={[s.lessonDot, { backgroundColor: lp?.status === "passed" ? colors.positive : lp?.status === "read" ? colors.warning : locked ? colors.surfaceTertiary : colors.brandPrimary }]} />
+                      <LessonMark status={locked ? "locked" : (lp?.status as "available" | "read" | "passed")} />
                       <View style={{ flex: 1 }}>
                         <Text style={[s.lessonTitle, { color: locked ? colors.muted : colors.onSurface }]}>{l.id} · {l.title}</Text>
                       </View>
                       {locked ? <IconLock color={colors.muted} /> : <IconChevron color={colors.muted} />}
-                    </Pressable>
+                    </PressableScale>
                   );
                 })}
               </>
@@ -87,7 +88,7 @@ export default function StudyHome() {
               <View style={{ marginTop: spacing.sm }}>
                 {m.lessonTitles.map((t, i) => (
                   <View key={i} style={s.lessonRow}>
-                    <View style={[s.lessonDot, { backgroundColor: colors.surfaceTertiary }]} />
+                    <LessonMark status="locked" />
                     <Text style={[s.lessonTitle, { color: colors.muted, flex: 1 }]}>{t}</Text>
                     <IconLock color={colors.muted} />
                   </View>
@@ -101,12 +102,30 @@ export default function StudyHome() {
   );
 }
 
+// Lesson state = colour + glyph (deuteranopia-safe): ✓ passed, ! read, ▶ available, empty locked.
+function LessonMark({ status }: { status: "locked" | "available" | "read" | "passed" }) {
+  const s = useStyles();
+  const { colors } = useTheme();
+  const map = {
+    passed: { bg: colors.positive, fg: colors.onSuccess, glyph: "✓" },
+    read: { bg: colors.warning, fg: colors.onWarning, glyph: "!" },
+    available: { bg: colors.interactive, fg: colors.onInteractive, glyph: "▶" },
+    locked: { bg: colors.surfaceTertiary, fg: colors.muted, glyph: "" },
+  }[status];
+  return (
+    <View style={[s.lessonDot, { backgroundColor: map.bg }]}>
+      {map.glyph ? <Text style={[s.lessonGlyph, { color: map.fg }]}>{map.glyph}</Text> : null}
+    </View>
+  );
+}
+
 const useStyles = makeStyles((c) => ({
   moduleHead: { flexDirection: "row", alignItems: "center", gap: spacing.md },
   moduleTitle: { color: c.onSurface, fontSize: 17, fontWeight: "700" },
   moduleSub: { color: c.muted, fontSize: 13, marginTop: 2 },
-  moduleCount: { color: c.highlight, fontSize: 15, fontWeight: "700" },
+  moduleCount: { color: c.onSurface, fontSize: 15, fontWeight: "700", ...tabular },
   lessonRow: { flexDirection: "row", alignItems: "center", gap: spacing.md, paddingVertical: 9 },
-  lessonDot: { width: 8, height: 8, borderRadius: 4 },
+  lessonDot: { width: 18, height: 18, borderRadius: 9, alignItems: "center", justifyContent: "center" },
+  lessonGlyph: { fontSize: 9, fontWeight: "800" },
   lessonTitle: { fontSize: 14, fontWeight: "500" },
 }));

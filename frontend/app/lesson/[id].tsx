@@ -104,13 +104,15 @@ function BlockView({ block, vizWidth }: { block: Block; vizWidth: number }) {
     case "warning":
       return (
         <View style={[s.callout, { borderColor: colors.warning, backgroundColor: colors.warning + "18" }]}>
-          <Text style={[s.calloutText, { color: colors.warning }]}>⚠ {block.text}</Text>
+          <Text style={[s.calloutGlyph, { color: colors.warning }]}>⚠</Text>
+          <Text style={s.calloutText}>{block.text}</Text>
         </View>
       );
     case "takeaway":
       return (
         <View style={[s.callout, { borderColor: colors.positive, backgroundColor: colors.positive + "18" }]}>
-          <Text style={[s.calloutText, { color: colors.positive }]}>{block.text}</Text>
+          <Text style={[s.calloutGlyph, { color: colors.positive }]}>✓</Text>
+          <Text style={s.calloutText}>{block.text}</Text>
         </View>
       );
     default:
@@ -120,7 +122,7 @@ function BlockView({ block, vizWidth }: { block: Block; vizWidth: number }) {
 
 const useStyles = makeStyles((c) => ({
   text: { color: c.onSurface, fontSize: 15, lineHeight: 23, marginBottom: spacing.md },
-  formula: { backgroundColor: c.surfaceTertiary, borderRadius: 10, padding: spacing.md, marginBottom: spacing.md, borderLeftWidth: 3, borderLeftColor: c.brandPrimary },
+  formula: { backgroundColor: c.surfaceTertiary, borderRadius: 10, padding: spacing.md, marginBottom: spacing.md, borderLeftWidth: 3, borderLeftColor: c.highlight },
   formulaText: { color: c.highlight, fontSize: 15, fontWeight: "600", ...tabular, lineHeight: 22 },
   example: { backgroundColor: c.surfaceTertiary, borderRadius: 10, padding: spacing.md, marginBottom: spacing.md, gap: 2 },
   exampleGiven: { color: c.onSurfaceSecondary, fontSize: 14, fontWeight: "600", marginBottom: 4 },
@@ -130,6 +132,7 @@ const useStyles = makeStyles((c) => ({
   tableRow: { flexDirection: "row", borderBottomWidth: 1, borderBottomColor: c.border },
   tableCell: { flex: 1, padding: 8, color: c.onSurface, fontSize: 13 },
   tableHead: { color: c.muted, fontWeight: "700", fontSize: 11 },
-  callout: { borderRadius: 10, borderWidth: 1, padding: spacing.md, marginBottom: spacing.md },
-  calloutText: { fontSize: 14, lineHeight: 20, fontWeight: "500" },
+  callout: { borderRadius: 10, borderWidth: 1, padding: spacing.md, marginBottom: spacing.md, flexDirection: "row", gap: spacing.sm, alignItems: "flex-start" },
+  calloutGlyph: { fontSize: 15, lineHeight: 20, fontWeight: "800" },
+  calloutText: { color: c.onSurface, fontSize: 14, lineHeight: 20, fontWeight: "500", flex: 1 },
 }));

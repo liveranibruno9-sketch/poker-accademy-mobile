@@ -2,6 +2,7 @@ import React from "react";
 import { Text, View, useWindowDimensions } from "react-native";
 import { useRouter } from "expo-router";
 import { Body, Card, Heading, PrimaryButton, ScreenContainer, SectionLabel, StatValue } from "@/src/ui/components";
+import { CountUp } from "@/src/ui/motion";
 import { makeStyles, spacing, tabular, useTheme } from "@/src/theme";
 import { it } from "@/src/i18n/it";
 import { useSim } from "@/src/features/sim/simStore";
@@ -59,11 +60,14 @@ export default function ReportScreen() {
   return (
     <ScreenContainer testID="report-screen">
       <SectionLabel>{it.report.title}</SectionLabel>
-      {controller.endedEarly ? <Body style={{ color: colors.warning, marginBottom: spacing.sm }}>{it.report.endedEarly}</Body> : null}
+      {controller.endedEarly ? <Body style={{ color: colors.warning, marginBottom: spacing.sm }}>⚠ {it.report.endedEarly}</Body> : null}
 
       <Card style={{ alignItems: "center" }}>
         <EquityWheel equity={score / 100} width={wheelW} labelHero={verdictWord} labelVillain="Persi" />
-        <Heading size="h1" style={{ marginTop: spacing.sm }}>{score.toFixed(1)} / 100</Heading>
+        <View style={s.scoreRow}>
+          <CountUp value={score} from={100} format={(v) => v.toFixed(1)} style={s.scoreValue} testID="report-score" />
+          <Text style={s.scoreOf}> / 100</Text>
+        </View>
         <Text style={s.verdictWord}>{verdictWord}</Text>
         {avg5 != null ? <Text style={s.compare}>Media ultime 5: {avg5.toFixed(1)}</Text> : null}
       </Card>
@@ -72,7 +76,7 @@ export default function ReportScreen() {
         <View style={s.kpiCell}><StatValue label={it.report.handsPlayed} value={String(handsPlayed)} /></View>
         <View style={s.kpiCell}><StatValue label={it.report.totalErrors} value={String(errors.length)} /></View>
         <View style={s.kpiCell}><StatValue label={it.report.evLost} value={evLost.toFixed(1)} /></View>
-        <View style={s.kpiCell}><StatValue label={it.report.correctPct} value={`${correctPct.toFixed(0)}%`} accent /></View>
+        <View style={s.kpiCell}><StatValue label={it.report.correctPct} value={`${correctPct.toFixed(0)}%`} /></View>
         <View style={s.kpiCell}><StatValue label={it.report.evPer100} value={(evLost / handsPlayed * 100).toFixed(0)} /></View>
         <View style={s.kpiCell}><StatValue label={it.report.avgRead} value={avgRead != null ? avgRead.toFixed(2) : "—"} /></View>
       </View>
@@ -135,7 +139,10 @@ export default function ReportScreen() {
 }
 
 const useStyles = makeStyles((c) => ({
-  verdictWord: { color: c.highlight, fontSize: 15, fontWeight: "700", marginTop: 2 },
+  scoreRow: { flexDirection: "row", alignItems: "baseline", marginTop: spacing.sm },
+  scoreValue: { color: c.reward, fontSize: 28, fontWeight: "700", ...tabular },
+  scoreOf: { color: c.muted, fontSize: 16, fontWeight: "600" },
+  verdictWord: { color: c.onSurface, fontSize: 15, fontWeight: "700", marginTop: 2 },
   compare: { color: c.muted, fontSize: 13, marginTop: 4, ...tabular },
   kpiGrid: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, marginTop: spacing.md },
   kpiCell: { width: "48%" },

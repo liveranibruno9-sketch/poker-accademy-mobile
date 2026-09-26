@@ -93,5 +93,5 @@ export default function SimSetup() {
 
 const useStyles = makeStyles((c) => ({
   row: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.sm, flexWrap: "wrap" },
-  compProfiles: { color: c.highlight, fontSize: 13, marginTop: spacing.sm, fontWeight: "600" },
+  compProfiles: { color: c.muted, fontSize: 13, marginTop: spacing.sm, fontWeight: "600" },
 }));
