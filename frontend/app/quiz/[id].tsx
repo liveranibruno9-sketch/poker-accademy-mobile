@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Text, TextInput, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -7,8 +7,8 @@ import { PressableScale } from "@/src/ui/motion";
 import { Body, Card, Heading, PrimaryButton, SecondaryButton, SectionLabel } from "@/src/ui/components";
 import { makeStyles, spacing, useTheme } from "@/src/theme";
 import { it } from "@/src/i18n/it";
-import { getLesson, QuizItem } from "@/src/content/curriculum";
-import { useApp } from "@/src/store/appStore";
+import { getLesson, LESSONS, QuizItem } from "@/src/content/curriculum";
+import { conceptsDue, useApp } from "@/src/store/appStore";
 import { HeaderBar } from "@/src/ui/header";
 import { EquityWheel } from "@/src/viz/charts";
 
@@ -18,7 +18,9 @@ export default function QuizScreen() {
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const lesson = getLesson(String(id));
+  const conceptMastery = useApp((st) => st.conceptMastery);
+  const isReview = String(id) === "review";
+  const lesson = useMemo(() => (isReview ? buildReview(conceptsDue(conceptMastery)) : getLesson(String(id))), [id, isReview, conceptMastery]);
   const setQuizScore = useApp((st) => st.setQuizScore);
   const recordConcept = useApp((st) => st.recordConceptResult);
 
@@ -56,7 +58,7 @@ export default function QuizScreen() {
     if (index + 1 >= total) {
       const score = (correctCount + (isCorrect() && !revealed ? 0 : 0)) / total;
       const finalScore = (correctCount) / total;
-      setQuizScore(lesson.id, finalScore, lesson.concepts);
+      if (!isReview) setQuizScore(lesson.id, finalScore, lesson.concepts);
       setDone(true);
     } else {
       setIndex((x) => x + 1);
@@ -96,7 +98,7 @@ export default function QuizScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.surface, paddingTop: insets.top }}>
-      <HeaderBar title={`Quiz · ${index + 1}/${total}`} onBack={() => router.back()} />
+      <HeaderBar title={`${isReview ? it.glossary.review : "Quiz"} · ${index + 1}/${total}`} onBack={() => router.back()} />
       <View style={{ padding: spacing.xl, flex: 1 }}>
         <SectionLabel>Domanda {index + 1}</SectionLabel>
         <Heading size="h2" style={{ marginTop: spacing.sm, marginBottom: spacing.xl }}>{q.prompt}</Heading>
@@ -165,6 +167,25 @@ export default function QuizScreen() {
       </View>
     </View>
   );
+}
+
+// Mixed spaced-repetition session: one item per due concept, round-robin across
+// concepts (never the same concept twice in a row), max 6 items.
+function buildReview(due: string[]) {
+  const pool = LESSONS.flatMap((l) => l.quiz.filter((q) => due.includes(q.concept)).map((q) => ({ ...q, id: `${l.id}-${q.id}` })));
+  const byConcept = new Map<string, typeof pool>();
+  for (const q of pool) byConcept.set(q.concept, [...(byConcept.get(q.concept) ?? []), q]);
+  const items: typeof pool = [];
+  let added = true;
+  while (added && items.length < 6) {
+    added = false;
+    for (const list of byConcept.values()) {
+      const q = list.shift();
+      if (q && items.length < 6) { items.push(q); added = true; }
+    }
+  }
+  if (items.length === 0) return undefined;
+  return { id: "review", module: "M1", order: 0, title: it.glossary.review, subtitle: "", estMinutes: 3, concepts: Array.from(byConcept.keys()), slides: [], quiz: items } as NonNullable<ReturnType<typeof getLesson>>;
 }
 
 const useStyles = makeStyles((c) => ({

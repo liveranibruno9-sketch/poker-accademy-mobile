@@ -57,6 +57,14 @@ export const it = {
     trainConcept: "Allena questo concetto",
     passed: "Superato",
     read: "Letto",
+    exit: "Esci",
+    check: "Verifica",
+    nextExercise: "Prossimo esercizio",
+    exercisesDone: "Esercizi completati",
+    saveTakeaway: "Salva nel glossario",
+    savedTakeaway: "Salvata nel glossario",
+    pretestHint: "Scegli prima di leggere la spiegazione.",
+    tryAgain: "Riprova",
   },
   quiz: {
     correct: "Corretto",
@@ -178,7 +186,7 @@ export const it = {
     responsibleBody: "Questo è uno strumento didattico. Non permette di giocare con denaro reale. Se il gioco diventa un problema, chiama il numero verde nazionale 800 558 822.",
     level: "Livello",
   },
-  glossary: { title: "Glossario", searchPlaceholder: "Cerca un termine" },
+  glossary: { title: "Glossario", searchPlaceholder: "Cerca un termine", savedRules: "Regole salvate", review: "Ripasso misto" },
   positions: { UTG: "UTG", HJ: "HJ", CO: "CO", BTN: "BTN", SB: "SB", BB: "BB" },
 };
 

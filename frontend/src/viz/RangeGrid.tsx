@@ -61,7 +61,7 @@ export function RangeGrid13x13({
               <View
                 style={[
                   s.cell,
-                  { width: cell, height: cell, backgroundColor: bg, borderColor: isPair ? colors.highlight : "transparent" },
+                  { width: cell, height: cell, backgroundColor: bg, borderColor: isPair ? colors.highlight : bg },
                 ]}
               >
                 <Text style={[s.cellText, { color: label, fontSize: Math.max(6, cell * 0.32) }]} numberOfLines={1}>

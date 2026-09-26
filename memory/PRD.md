@@ -45,6 +45,15 @@ App mobile "Poker Academy": trainer di Texas Hold'em No Limit 6-max cash (micro 
 - Store: `activityDays` (streak), selettori `streakDays()` e `currentLesson()`.
 - Frase "Applica la teoria al tavolo…" spostata nel setup sessione.
 
+## Revisione 3 — lezioni a sub-schermate (parte 1: L02) (2026-06-26)
+- Renderer `app/lesson/[id].tsx`: sequenza di sub-schermate (✕ esci, "n/7", Indietro/Avanti, ultima → quiz). Vietata la ScrollView unica.
+- Schema `curriculum.ts`: `Slide.role` (hook→pretest→visual→rule→example→apply→takeaway), blocchi `pretest` e `exercise` (`ExerciseItem` con feedback specifico per risposta), markup `[[Termine]]` → glossario.
+- `src/features/lesson/blocks.tsx` (PretestBlock, ExerciseBlock), `src/ui/RichText.tsx`, `src/ui/Slider.tsx`.
+- Infografiche interattive in `src/viz/charts.tsx`: PotOddsBar (slider puntata + zona di ribaltamento), EquityWheel, OutsCounter (tap), MdfAlphaCurve, ValueBluffTree, SprGauge, RangeGridPaint.
+- `scripts/check-lesson-budget.js`: fallisce se una sub-schermata supera 60 parole.
+- Takeaway salvabile → Glossario "Regole salvate" (`savedTakeaways`); ripasso misto `/quiz/review` (round-robin fra concetti in scadenza, max 6).
+- L02 riscritta (7 sub-schermate, 237 parole visibili + feedback). L01, L03–L10: da riscrivere dopo approvazione.
+
 ## Backlog (prioritized)
 - **P0**: —
 - **P1**: EV via rollout multi-strada completo (attuale: modello in forma chiusa, vedi DECISIONS.md); replay mano con "rigioca da qui"; export report come immagine (react-native-view-shot).

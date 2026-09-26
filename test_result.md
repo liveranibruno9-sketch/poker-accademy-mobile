@@ -155,3 +155,21 @@ frontend:
 agent_communication:
   - agent: "main"
     message: "Test the new navigation: onboarding skip + full; home elements and taps (home-progress-card -> lesson L01, home-play -> sim setup, home-review -> study or quiz, home-stats -> stats); study tab module-M1 -> module-screen -> lesson-row-L01 -> lesson -> quiz -> quiz-done returns to study; coming modules not tappable; tabs nav-home/nav-study/nav-sim/nav-stats/nav-profile; theme light on home; persistence of streak after a quiz (home-streak shows '1 giorno')."
+
+## Iteration 4 — Revisione 3 (parte 1): L02 nel nuovo formato a sub-schermate (main agent)
+frontend:
+  - task: "Paged lesson renderer app/lesson/[id].tsx (exit ✕, position n/7, prev/next, per-slide content; last slide -> quiz); new blocks pretest/exercise (src/features/lesson/blocks.tsx); RichText [[Term]] -> /glossary?q="
+    implemented: true
+    working: "NA"
+    needs_retesting: true
+  - task: "Interactive infographics in src/viz/charts.tsx (PotOddsBar slider, EquityWheel, OutsCounter tap, MdfAlphaCurve, ValueBluffTree, SprGauge, RangeGridPaint) + src/ui/Slider.tsx"
+    implemented: true
+    working: "NA"
+    needs_retesting: true
+  - task: "L02 rewritten (7 slides) in curriculum.ts; scripts/check-lesson-budget.js; takeaway save -> glossary 'Regole salvate'; mixed review quiz at /quiz/review"
+    implemented: true
+    working: "NA"
+    needs_retesting: true
+agent_communication:
+  - agent: "main"
+    message: "Test L02 at /lesson/L02 (7 sub-screens), old-format lessons still render (L01 single slide with OutsCounter tap), glossary links, save takeaway, review quiz from Home 'Ripassa' after wrong answers, and that simulator verdict/report (EvBarChart, ScoreTimeline) still render."

@@ -1,6 +1,7 @@
 // Curriculum content as data (not JSX). A generic renderer reads this schema.
 // M1 is fully written; M2–M8 are skeletons marked "coming".
 
+// Text blocks may contain [[Term]] → tappable link to the glossary.
 export type Block =
   | { kind: "text"; text: string }
   | { kind: "formula"; lines: string[] }
@@ -8,9 +9,28 @@ export type Block =
   | { kind: "table"; headers: string[]; rows: string[][] }
   | { kind: "viz"; component: string; props?: Record<string, any> }
   | { kind: "warning"; text: string }
-  | { kind: "takeaway"; text: string };
+  | { kind: "takeaway"; text: string }
+  // Micro-decision asked BEFORE the explanation. `feedback[i]` is shown for option i (no judgement).
+  | { kind: "pretest"; prompt: string; options: string[]; correctIndex: number; feedback: string[] }
+  // 2–3 numeric exercises with answer-specific feedback.
+  | { kind: "exercise"; items: ExerciseItem[] };
+
+export interface ExerciseItem {
+  prompt: string;
+  unit?: string;
+  answer: number;
+  tolerance: number;
+  concept: string;
+  correct: string; // feedback when right
+  wrong: { value?: number; below?: boolean; above?: boolean; text: string }[]; // matched in order: exact value (±2×tolerance), then direction
+  fallback: string; // generic feedback with the worked solution
+}
+
+// Canonical 7-step sequence: hook → pretest → visual → rule → example → apply → takeaway.
+export type SlideRole = "hook" | "pretest" | "visual" | "rule" | "example" | "apply" | "takeaway";
 
 export interface Slide {
+  role?: SlideRole;
   kicker: string;
   heading: string;
   blocks: Block[];
@@ -77,18 +97,62 @@ export const LESSONS: Lesson[] = [
   },
   {
     id: "L02", module: "M1", order: 2, title: "Pot odds ed equity di break-even",
-    subtitle: "Quanta equity serve per chiamare", estMinutes: 3, concepts: ["pot_odds", "required_equity"],
+    subtitle: "Quanta equity serve per chiamare", estMinutes: 4, concepts: ["pot_odds", "required_equity"],
     slides: [
-      { kicker: "IL CONCETTO", heading: "Il prezzo del call", blocks: [
-        { kind: "text", text: "Le pot odds sono il rapporto tra quanto paghi e quanto puoi vincere. Ti dicono quanta equity ti serve, come minimo, per chiamare senza perdere soldi." },
-        { kind: "formula", lines: ["equity richiesta = call / (piatto + 2 × call)"] },
-        { kind: "viz", component: "PotOddsBar", props: { pot: 100, bet: 50 } },
-        { kind: "example", given: "Piatto 100, l'avversario punta 50", steps: ["50 / (100 + 50 + 50)", "50 / 200 = 25%"], result: "Ti serve almeno il 25% di equity" },
-        { kind: "warning", text: "Errore comune: contare il piatto prima della puntata dell'avversario. Il piatto che vinci include già la sua bet." },
+      { role: "hook", kicker: "LA DOMANDA", heading: "Piatto 100, ti puntano 50. Chiami?", blocks: [
+        { kind: "viz", component: "PotOddsBar", props: { pot: 100, bet: 50, interactive: false, showRequired: false } },
+        { kind: "text", text: "Hai un progetto di colore e devi pagare 50 per vedere la prossima carta. La risposta non è una sensazione: è un numero." },
       ]},
-      { kicker: "AL TAVOLO", heading: "Equity richiesta per size", blocks: [
+      { role: "pretest", kicker: "PROVA PRIMA", heading: "Quanta equity ti serve?", blocks: [
+        { kind: "pretest", prompt: "Piatto 100, l'avversario punta 50. Per chiamare senza perdere, la tua [[Equity]] deve essere almeno…", options: ["20%", "25%", "33%"], correctIndex: 1,
+          feedback: [
+            "Hai diviso 50 per 250. Il piatto finale è 200: piatto, puntata e il tuo call.",
+            "Sì: 50 su 200. Ora vediamo da dove arriva quel 200.",
+            "Hai diviso 50 per 150: manca il tuo call nel piatto finale, che è 200.",
+          ] },
+      ]},
+      { role: "visual", kicker: "INTUIZIONE", heading: "Muovi la puntata", blocks: [
+        { kind: "viz", component: "PotOddsBar", props: { pot: 100, bet: 50, equity: 30, interactive: true } },
+        { kind: "text", text: "Più grande la puntata, più equity ti serve. Con il 30% di equity la decisione si ribalta quando la puntata supera i 75." },
+      ]},
+      { role: "rule", kicker: "LA REGOLA", heading: "Il prezzo del call", blocks: [
+        { kind: "formula", lines: ["equity richiesta = call / (piatto + 2 × call)"] },
+        { kind: "viz", component: "PotOddsBar", props: { pot: 100, bet: 50, interactive: false } },
+        { kind: "text", text: "Il call conta due volte: la puntata dell'avversario è già nel piatto, e il tuo call si aggiunge. Queste sono le [[Pot odds]]." },
+      ]},
+      { role: "example", kicker: "ESEMPIO", heading: "Piatto 100, puntata 50", blocks: [
+        { kind: "example", given: "Piatto 100, l'avversario punta 50", steps: ["Piatto finale: 100 + 50 + 50 = 200", "Equity richiesta: 50 / 200"], result: "25%: chiami solo con almeno il 25% di equity" },
+        { kind: "warning", text: "Errore comune: dividere per 150. Il piatto che vinci include anche il tuo call." },
+      ]},
+      { role: "apply", kicker: "APPLICA", heading: "Ora tu", blocks: [
+        { kind: "exercise", items: [
+          { prompt: "Piatto 60, l'avversario punta 30. Equity richiesta?", unit: "%", answer: 25, tolerance: 1, concept: "required_equity",
+            correct: "30 su 120. Il tuo call è nel piatto finale.",
+            wrong: [
+              { value: 20, text: "Hai diviso per 150. Il piatto finale è 60 + 30 + 30 = 120." },
+              { value: 33, text: "Hai fatto 30 su 90: manca il tuo call. Sono 120." },
+              { value: 50, text: "Hai fatto 30 su 60: il piatto finale è 120, non 60." },
+            ],
+            fallback: "30 / (60 + 30 + 30) = 30 / 120 = 25%." },
+          { prompt: "Piatto 100, l'avversario punta 100 (pot). Equity richiesta?", unit: "%", answer: 33.3, tolerance: 1, concept: "pot_odds",
+            correct: "100 su 300: una puntata pot chiede un terzo.",
+            wrong: [
+              { value: 50, text: "Hai fatto 100 su 200: manca il tuo call. Il piatto finale è 300." },
+              { value: 25, text: "25% è per una puntata di mezzo piatto. Qui la puntata è pot." },
+            ],
+            fallback: "100 / (100 + 100 + 100) = 33,3%." },
+          { prompt: "Piatto 150, l'avversario punta 50 (1/3 pot). Equity richiesta?", unit: "%", answer: 20, tolerance: 1, concept: "required_equity",
+            correct: "50 su 250. Una puntata da un terzo costa poco: basta il 20%.",
+            wrong: [
+              { value: 25, text: "Hai dimenticato il tuo call: 150 + 50 + 50 = 250, non 200." },
+              { value: 33, text: "Hai fatto 50 su 150: il piatto finale è 250." },
+            ],
+            fallback: "50 / (150 + 50 + 50) = 50 / 250 = 20%." },
+        ] },
+      ]},
+      { role: "takeaway", kicker: "PORTA VIA", heading: "Confronta due numeri", blocks: [
+        { kind: "takeaway", text: "Prima di chiamare: equity stimata contro equity richiesta. Se la tua è sotto, folda." },
         { kind: "table", headers: ["Size", "Equity richiesta"], rows: [["1/3 pot", "20%"], ["1/2 pot", "25%"], ["2/3 pot", "28,6%"], ["3/4 pot", "30%"], ["pot", "33,3%"]] },
-        { kind: "takeaway", text: "Confronta sempre l'equity stimata con l'equity richiesta prima di chiamare. Se la tua equity è sotto, folda." },
       ]},
     ],
     quiz: [

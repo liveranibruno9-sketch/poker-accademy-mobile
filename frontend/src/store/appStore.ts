@@ -90,6 +90,7 @@ interface PersistShape {
   conceptMastery: Record<string, ConceptMastery>;
   sessions: SessionRecord[];
   activityDays: string[]; // YYYY-MM-DD, days with at least one lesson/quiz/session (for streak)
+  savedTakeaways: string[]; // lesson ids whose takeaway card was saved to the glossary
 }
 
 interface AppState extends PersistShape {
@@ -101,6 +102,7 @@ interface AppState extends PersistShape {
   setQuizScore: (lessonId: string, score: number, concepts: string[]) => void;
   recordConceptResult: (concept: string, correct: boolean) => void;
   addSession: (s: SessionRecord) => void;
+  toggleTakeaway: (lessonId: string) => void;
   resetProgress: () => void;
 }
 
@@ -159,6 +161,7 @@ async function persist(get: () => AppState) {
     conceptMastery: s.conceptMastery,
     sessions: s.sessions,
     activityDays: s.activityDays,
+    savedTakeaways: s.savedTakeaways,
   };
   await storage.setItem(KEY, JSON.stringify(data));
 }
@@ -170,6 +173,7 @@ export const useApp = create<AppState>((set, get) => ({
   conceptMastery: {},
   sessions: [],
   activityDays: [],
+  savedTakeaways: [],
 
   hydrate: async () => {
     const raw = await storage.getItem(KEY, "");
@@ -182,6 +186,7 @@ export const useApp = create<AppState>((set, get) => ({
           conceptMastery: data.conceptMastery ?? {},
           sessions: data.sessions ?? [],
           activityDays: data.activityDays ?? [],
+          savedTakeaways: data.savedTakeaways ?? [],
           hydrated: true,
         });
         applyThemePref(data.profile?.theme ?? "dark");
@@ -266,6 +271,11 @@ export const useApp = create<AppState>((set, get) => ({
     persist(get);
   },
 
+  toggleTakeaway: (lessonId) => {
+    set((s) => ({ savedTakeaways: s.savedTakeaways.includes(lessonId) ? s.savedTakeaways.filter((x) => x !== lessonId) : [...s.savedTakeaways, lessonId] }));
+    persist(get);
+  },
+
   resetProgress: () => {
     set({
       profile: { ...defaultProfile(), onboarded: true, level: get().profile.level },
@@ -273,6 +283,7 @@ export const useApp = create<AppState>((set, get) => ({
       conceptMastery: {},
       sessions: [],
       activityDays: [],
+      savedTakeaways: [],
     });
     persist(get);
   },

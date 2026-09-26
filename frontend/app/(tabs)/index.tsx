@@ -6,7 +6,7 @@ import { PrimaryButton, ProgressBar } from "@/src/ui/components";
 import { makeStyles, radius, spacing, tabular, useTheme } from "@/src/theme";
 import { it } from "@/src/i18n/it";
 import { averageScore, conceptsDue, currentLesson, streakDays, useApp } from "@/src/store/appStore";
-import { LESSONS, MODULES } from "@/src/content/curriculum";
+import { MODULES } from "@/src/content/curriculum";
 import { IconFlame, IconStats, IconStudy } from "@/src/ui/icons";
 import { CountUp, PressableScale } from "@/src/ui/motion";
 
@@ -34,8 +34,7 @@ export default function HomeScreen() {
   };
 
   const onReview = () => {
-    const target = due.length ? LESSONS.find((l) => l.concepts.some((c) => due.includes(c))) : undefined;
-    if (target) router.push(`/quiz/${target.id}`);
+    if (due.length) router.push("/quiz/review");
     else router.push("/(tabs)/study");
   };
 
