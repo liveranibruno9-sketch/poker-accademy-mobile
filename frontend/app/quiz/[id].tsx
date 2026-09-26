@@ -71,7 +71,7 @@ export default function QuizScreen() {
     const passed = score >= 0.7;
     return (
       <View style={{ flex: 1, backgroundColor: colors.surface, paddingTop: insets.top }}>
-        <HeaderBar title={it.study.quizResult} onBack={() => router.replace("/(tabs)")} />
+        <HeaderBar title={it.study.quizResult} onBack={() => router.replace("/(tabs)/study")} />
         <View style={{ padding: spacing.xl, alignItems: "center", flex: 1, justifyContent: "center" }}>
           <EquityWheel equity={score} labelHero="Corrette" labelVillain="Errate" />
           <Heading size="h1" style={{ marginTop: spacing.lg }}>{passed ? it.quiz.correct : "Riprova"}</Heading>
@@ -87,7 +87,7 @@ export default function QuizScreen() {
           <View style={{ height: spacing.xl }} />
           <View style={{ alignSelf: "stretch", gap: spacing.md }}>
             <PrimaryButton title={it.study.trainConcept} onPress={() => router.replace("/(tabs)/sim")} testID="quiz-train-concept" />
-            <SecondaryButton title={it.common.done} onPress={() => router.replace("/(tabs)")} testID="quiz-done" />
+            <SecondaryButton title={it.common.done} onPress={() => router.replace("/(tabs)/study")} testID="quiz-done" />
           </View>
         </View>
       </View>

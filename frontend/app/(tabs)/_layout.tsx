@@ -3,7 +3,7 @@ import { Platform } from "react-native";
 import { Tabs } from "expo-router";
 import { useTheme } from "@/src/theme";
 import { it } from "@/src/i18n/it";
-import { IconProfile, IconSim, IconStats, IconStudy } from "@/src/ui/icons";
+import { IconHome, IconProfile, IconSim, IconStats, IconStudy } from "@/src/ui/icons";
 import { usesNativeTabs } from "@/src/navigation";
 
 export default function TabsLayout() {
@@ -14,6 +14,10 @@ export default function TabsLayout() {
     return (
       <NativeTabs>
         <NativeTabs.Trigger name="index">
+          <NativeTabs.Trigger.Icon sf="house.fill" />
+          <NativeTabs.Trigger.Label>{it.tabs.home}</NativeTabs.Trigger.Label>
+        </NativeTabs.Trigger>
+        <NativeTabs.Trigger name="study">
           <NativeTabs.Trigger.Icon sf="book.fill" />
           <NativeTabs.Trigger.Label>{it.tabs.study}</NativeTabs.Trigger.Label>
         </NativeTabs.Trigger>
@@ -48,7 +52,8 @@ export default function TabsLayout() {
         tabBarLabelStyle: { fontSize: 11, fontWeight: "600" },
       }}
     >
-      <Tabs.Screen name="index" options={{ title: it.tabs.study, tabBarButtonTestID: "nav-study", tabBarIcon: ({ color }) => <IconStudy color={color} /> }} />
+      <Tabs.Screen name="index" options={{ title: it.tabs.home, tabBarButtonTestID: "nav-home", tabBarIcon: ({ color }) => <IconHome color={color} /> }} />
+      <Tabs.Screen name="study" options={{ title: it.tabs.study, tabBarButtonTestID: "nav-study", tabBarIcon: ({ color }) => <IconStudy color={color} /> }} />
       <Tabs.Screen name="sim" options={{ title: it.tabs.sim, tabBarButtonTestID: "nav-sim", tabBarIcon: ({ color }) => <IconSim color={color} /> }} />
       <Tabs.Screen name="stats" options={{ title: it.tabs.stats, tabBarButtonTestID: "nav-stats", tabBarIcon: ({ color }) => <IconStats color={color} /> }} />
       <Tabs.Screen name="profile" options={{ title: it.tabs.profile, tabBarButtonTestID: "nav-profile", tabBarIcon: ({ color }) => <IconProfile color={color} /> }} />

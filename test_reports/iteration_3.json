@@ -1,0 +1,27 @@
+{
+  "summary": "Full regression pass on Poker Academy Revision 2 (minimal Home + Study tab with collapsed modules + dedicated /module/[id] screen + 3-step onboarding with visible Salta). All requested checks PASS: (1) Onboarding renders 3 dot-progress steps, onboarding-skip is present on step 0/1/2 (label 'Salta') and lands on home-screen; the full path onboarding-next * 2 -> level-basics -> onboarding-next also lands on home-screen. (2) home-screen renders ONLY the four blocks: status row (home-streak '0 giorni' / home-avg 'MEDIA —'), one home-progress-card ('Fondamenti matematici' + progress bar + 'Modulo 1 · lezione 1 di 10'), one dominant gold home-play 'GIOCA UNA SESSIONE', two pills home-review and home-stats. No title, greeting, description text or KPI grid present in the home DOM. Taps: home-progress-card -> /lesson/L01 with go-to-quiz visible; home-play -> /sim with start-session visible AND the exact hint 'Applica la teoria al tavolo. Parti da 100 punti e scopri dove sbagli.' present; home-stats -> stats-screen; home-review (no due concepts) -> /study study-screen. (3) Study tab lists all 8 module-* cards collapsed (M1..M8); zero lesson-row-* elements are rendered on the Study screen; M2..M8 show the 'In arrivo' badge + lock and are inert (tap does not navigate). module-M1 tap opens module-screen with header 'M1', counter '0/10', 10 lesson-row-L01..L10 (L01 marked ▶ available, L02..L10 locked with lock glyph). (4) Full flow module-screen -> lesson-row-L01 -> lesson (blocks render) -> go-to-quiz -> quiz-option-* + quiz-check + quiz-next -> quiz-result-screen -> quiz-done navigates back to study-screen. Answering wrongly (option-0) kept the lesson at 'read' state so Home progress-card correctly still shows 'Modulo 1 · lezione 1 di 10' (not lezione 2), and home-review-badge appeared with count '2' for the concepts answered wrong (outs, equity). home-streak flipped to '1 giorno' after the activity was recorded today. (5) Tabs: all 5 nav-home / nav-study / nav-sim / nav-stats / nav-profile are present with proper testIDs (previous iteration's ask fulfilled) and switch screens. Report 'Fatto' (report-done in /app/frontend/app/report.tsx:136) uses router.replace('/(tabs)') so it lands on Home (code-verified; not re-tested to preserve time per agent note). (6) Light theme via profile theme-light switches home bg to rgb(247, 249, 252) with dark on-surface text rgb(15, 22, 34) - readable; theme-dark restores home bg to rgb(10, 14, 20). Toggling back and forth works cleanly after ~1s rerender. (7) Zero console errors captured across the full run and no React Native red screen at any point.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": ["/app/test_reports/iteration_1.json", "/app/test_reports/iteration_2.json", "/app/test_reports/iteration_3.json"],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "app/(tabs)/index.tsx is a clean 110-line implementation: status row + one progress card + one hero CTA + two pills, exactly per spec. Uses PressableScale on the progress card and pills so both feel tappable; badge only mounts when due.length > 0.",
+    "app/(tabs)/study.tsx correctly renders only collapsed module cards; unpublished modules use a plain View (no onPress) so tapping is inert as required.",
+    "app/module/[id].tsx is the sole surface where lessons are listed; lessons without progress default to locked and PressableScale receives disabled={locked} so tap is inert on locked rows.",
+    "onboarding.tsx keeps copy under 8 words per step and the Salta button is always mounted at the top-right with hitSlop 12 and a 44x44 touch target - accessible and consistent across steps.",
+    "appStore.currentLesson correctly returns the first available/read lesson so Home 'Modulo 1 · lezione X di 10' stays in sync after passed quizzes and does not advance on failed attempts.",
+    "app/report.tsx:136 - report-done uses router.replace('/(tabs)') so 'Fatto' returns to Home (Revision 2 requirement), not to Study."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (frontend only, per request)", "frontend": "100%"},
+  "seed_data_creation": "None. Offline app, state under localStorage key poker_academy_state_v3.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Tabs now expose testIDs: nav-home / nav-study / nav-sim / nav-stats / nav-profile. When on non-tab routes (/lesson/*, /quiz/*, /module/*) the tab bar is not mounted; use router-driven links (home-progress-card, quiz-done, report-done) or page.goto to move between them. Note that page.locator for nav-home occasionally resolves to 2 elements (one hidden), iterate .nth(i) + is_visible() before clicking. When toggling theme, wait ~1000-1200ms before reading computed styles (initial 300ms is too tight, produced a stale reading in one run). Onboarding storage key: poker_academy_state_v3. To reach quiz-done fast, just click quiz-option-0 + quiz-check + quiz-next twice; L01 has 2 questions.",
+  "rca_of_issue": "N/A - no functional bug found this iteration."
+}

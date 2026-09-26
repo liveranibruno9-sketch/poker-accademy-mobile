@@ -40,6 +40,23 @@ export function IconProfile({ color, size = 24 }: { color: string; size?: number
   );
 }
 
+export function IconHome({ color, size = 24 }: { color: string; size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M4 11l8-7 8 7v8a1.5 1.5 0 01-1.5 1.5h-13A1.5 1.5 0 014 19v-8Z" stroke={color} strokeWidth={1.8} strokeLinejoin="round" />
+      <Path d="M10 20v-6h4v6" stroke={color} strokeWidth={1.8} strokeLinejoin="round" />
+    </Svg>
+  );
+}
+
+export function IconFlame({ color, size = 20 }: { color: string; size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M12 2c1 4 5 5.5 5 11a5 5 0 01-10 0c0-2 .8-3.5 2-4.5.2 1.5 1 2.5 2 2.5 0-3 0-6 1-9Z" fill={color} />
+    </Svg>
+  );
+}
+
 export function IconChevron({ color, size = 20 }: { color: string; size?: number }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">

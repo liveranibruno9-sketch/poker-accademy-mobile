@@ -1,7 +1,7 @@
 // All user-facing Italian strings. Structured for a future en.ts.
 export const it = {
   appName: "Poker Academy",
-  tabs: { study: "Studio", sim: "Simulatore", stats: "Statistiche", profile: "Profilo" },
+  tabs: { home: "Home", study: "Studio", sim: "Simulatore", stats: "Statistiche", profile: "Profilo" },
   common: {
     continue: "Continua",
     start: "Inizia",
@@ -20,13 +20,12 @@ export const it = {
   },
   onboarding: {
     s1Title: "Gioca con criteri, non a intuito",
-    s1Body: "Poker Academy ti porta da “gioco a sensazione” a decisioni verificabili: studi un concetto, lo applichi al tavolo, scopri esattamente dove hai sbagliato e quanto è costato in big blind.",
-    s2Title: "Parti da 100 punti",
-    s2Body: "Nel simulatore non conta se vinci il piatto, conta se la decisione era corretta. Una mano persa giocata bene costa 0 punti. Un piatto vinto con un call terribile ti costa punti.",
-    s3Title: "Qual è il tuo livello?",
-    levelNovice: "Non ho mai giocato sul serio",
-    levelIntuitive: "Gioco a intuito",
-    levelBasics: "Conosco le basi",
+    s2Title: "Conta la decisione, non il piatto",
+    s3Title: "Il tuo livello?",
+    skip: "Salta",
+    levelNovice: "Principiante",
+    levelIntuitive: "Intuitivo",
+    levelBasics: "Basi solide",
   },
   home: {
     greeting: "Bentornato",
@@ -34,6 +33,12 @@ export const it = {
     avgScore: "Punteggio medio",
     reviewsDue: "Ripassi in scadenza",
     startRated: "Sessione valutata",
+    play: "Gioca una sessione",
+    review: "Ripassa",
+    days: (n: number) => (n === 1 ? "1 giorno" : `${n} giorni`),
+    avg: "Media",
+    moduleLessonOf: (m: number, l: number, t: number) => `Modulo ${m} · lezione ${l} di ${t}`,
+    startHere: "Inizia dal Modulo 1",
     startTraining: "Allenamento libero",
     noReviews: "Nessun ripasso in scadenza",
     lastSessions: "Ultime sessioni",
@@ -64,6 +69,7 @@ export const it = {
   },
   sim: {
     setupTitle: "Imposta sessione",
+    setupHint: "Applica la teoria al tavolo. Parti da 100 punti e scopri dove sbagli.",
     hands: "Mani",
     composition: "Composizione tavolo",
     stack: "Stack",

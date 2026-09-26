@@ -133,3 +133,25 @@ test_plan:
 agent_communication:
   - agent: "main"
     message: "Palette swapped to gold/teal/blue on near-black; reanimated-based juice added to all controls. Please verify no runtime errors (reanimated on web), all flows still work, numbers render (CountUp), theme switch to Chiaro renders (felt stays green), and Profile reduce-motion pills toggle."
+
+## Iteration 3 — Revisione 2: Home separata dal percorso di studio (main agent)
+frontend:
+  - task: "New Home tab (app/(tabs)/index.tsx): status row (streak + avg), one progress card -> current lesson, hero CTA 'GIOCA UNA SESSIONE' -> sim setup, pills Ripassa (badge concepts due) + Statistiche"
+    implemented: true
+    working: "NA"
+    needs_retesting: true
+  - task: "Study path tab (app/(tabs)/study.tsx) collapsed module cards -> /module/[id] detail screen with lesson list"
+    implemented: true
+    working: "NA"
+    needs_retesting: true
+  - task: "Onboarding: 3 screens, <=8 words each, graphic, visible 'Salta' (onboarding-skip)"
+    implemented: true
+    working: "NA"
+    needs_retesting: true
+  - task: "streak tracking (activityDays) in appStore; quiz done -> /(tabs)/study; sim setup hint text"
+    implemented: true
+    working: "NA"
+    needs_retesting: true
+agent_communication:
+  - agent: "main"
+    message: "Test the new navigation: onboarding skip + full; home elements and taps (home-progress-card -> lesson L01, home-play -> sim setup, home-review -> study or quiz, home-stats -> stats); study tab module-M1 -> module-screen -> lesson-row-L01 -> lesson -> quiz -> quiz-done returns to study; coming modules not tappable; tabs nav-home/nav-study/nav-sim/nav-stats/nav-profile; theme light on home; persistence of streak after a quiz (home-streak shows '1 giorno')."

@@ -83,28 +83,30 @@ export function StatValue({ label, value, delta, accent, testID }: { label: stri
 
 const LIP = 4;
 
-export function PrimaryButton({ title, onPress, disabled, testID, tone = "primary" }: { title: string; onPress: () => void; disabled?: boolean; testID?: string; tone?: "primary" | "success" | "danger" }) {
+export function PrimaryButton({ title, onPress, disabled, testID, tone = "primary", size = "md" }: { title: string; onPress: () => void; disabled?: boolean; testID?: string; tone?: "primary" | "success" | "danger" | "reward"; size?: "md" | "hero" }) {
   const s = useStyles();
   const { colors } = useTheme();
-  const bg = tone === "success" ? colors.success : tone === "danger" ? colors.error : colors.brandPrimary;
-  const fg = tone === "success" ? colors.onSuccess : tone === "danger" ? colors.onError : colors.onBrandPrimary;
+  const bg = tone === "success" ? colors.success : tone === "danger" ? colors.error : tone === "reward" ? colors.reward : colors.brandPrimary;
+  const fg = tone === "success" ? colors.onSuccess : tone === "danger" ? colors.onError : tone === "reward" ? colors.onReward : colors.onBrandPrimary;
+  const lip = size === "hero" ? LIP + 2 : LIP;
   const { depth, press, release } = usePressDepth();
-  const faceStyle = useAnimatedStyle(() => ({ transform: [{ translateY: depth.value * LIP }] }));
+  const faceStyle = useAnimatedStyle(() => ({ transform: [{ translateY: depth.value * lip }] }));
   return (
     <Pressable
       testID={testID}
       onPressIn={press}
       onPressOut={release}
       onPress={() => {
-        haptic.light();
+        if (size === "hero") haptic.medium();
+        else haptic.light();
         onPress();
       }}
       disabled={disabled}
       accessibilityRole="button"
-      style={[s.btnLip, { backgroundColor: shade(bg, -0.38), opacity: disabled ? 0.4 : 1 }]}
+      style={[s.btnLip, size === "hero" && { borderRadius: radius.card }, { backgroundColor: shade(bg, -0.38), opacity: disabled ? 0.4 : 1, paddingBottom: lip }]}
     >
-      <Animated.View style={[s.btn, { backgroundColor: bg }, faceStyle]}>
-        <Text style={[s.btnText, { color: fg }]}>{title}</Text>
+      <Animated.View style={[s.btn, size === "hero" && s.btnHero, { backgroundColor: bg }, faceStyle]}>
+        <Text style={[s.btnText, size === "hero" && s.btnHeroText, { color: fg }]}>{size === "hero" ? title.toUpperCase() : title}</Text>
       </Animated.View>
     </Pressable>
   );
@@ -217,6 +219,8 @@ const useStyles = makeStyles((c) => ({
   btnLip: { borderRadius: radius.md, paddingBottom: LIP },
   btn: { borderRadius: radius.md, paddingVertical: 15, alignItems: "center", justifyContent: "center", minHeight: 50 },
   btnText: { fontSize: 16, fontWeight: "700" },
+  btnHero: { minHeight: 82, borderRadius: radius.card },
+  btnHeroText: { fontSize: 20, letterSpacing: 1.2, fontWeight: "800" },
   btnSecondary: { borderRadius: radius.md, paddingVertical: 14, alignItems: "center", borderWidth: 1, borderColor: c.border, backgroundColor: c.surfaceSecondary, minHeight: 48 },
   btnSecondaryText: { color: c.onSurface, fontSize: 15, fontWeight: "600" },
   card: { backgroundColor: c.surfaceSecondary, borderRadius: radius.card, padding: spacing.lg, borderWidth: 1, borderColor: c.border },

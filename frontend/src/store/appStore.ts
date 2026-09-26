@@ -89,6 +89,7 @@ interface PersistShape {
   lessonProgress: Record<string, LessonProgress>;
   conceptMastery: Record<string, ConceptMastery>;
   sessions: SessionRecord[];
+  activityDays: string[]; // YYYY-MM-DD, days with at least one lesson/quiz/session (for streak)
 }
 
 interface AppState extends PersistShape {
@@ -125,6 +126,15 @@ function initialProgress(): Record<string, LessonProgress> {
   return map;
 }
 
+export function dayKey(d = new Date()): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function withToday(days: string[]): string[] {
+  const k = dayKey();
+  return days.includes(k) ? days : [...days, k].slice(-400);
+}
+
 function daysFromNow(days: number): string {
   const d = new Date();
   d.setDate(d.getDate() + days);
@@ -148,6 +158,7 @@ async function persist(get: () => AppState) {
     lessonProgress: s.lessonProgress,
     conceptMastery: s.conceptMastery,
     sessions: s.sessions,
+    activityDays: s.activityDays,
   };
   await storage.setItem(KEY, JSON.stringify(data));
 }
@@ -158,6 +169,7 @@ export const useApp = create<AppState>((set, get) => ({
   lessonProgress: initialProgress(),
   conceptMastery: {},
   sessions: [],
+  activityDays: [],
 
   hydrate: async () => {
     const raw = await storage.getItem(KEY, "");
@@ -169,6 +181,7 @@ export const useApp = create<AppState>((set, get) => ({
           lessonProgress: { ...initialProgress(), ...data.lessonProgress },
           conceptMastery: data.conceptMastery ?? {},
           sessions: data.sessions ?? [],
+          activityDays: data.activityDays ?? [],
           hydrated: true,
         });
         applyThemePref(data.profile?.theme ?? "dark");
@@ -193,8 +206,8 @@ export const useApp = create<AppState>((set, get) => ({
   markLessonRead: (lessonId) => {
     set((s) => {
       const cur = s.lessonProgress[lessonId];
-      if (!cur || cur.status === "passed") return s;
-      return { lessonProgress: { ...s.lessonProgress, [lessonId]: { ...cur, status: "read" } } };
+      if (!cur || cur.status === "passed") return { activityDays: withToday(s.activityDays) };
+      return { lessonProgress: { ...s.lessonProgress, [lessonId]: { ...cur, status: "read" } }, activityDays: withToday(s.activityDays) };
     });
     persist(get);
   },
@@ -225,7 +238,7 @@ export const useApp = create<AppState>((set, get) => ({
           nextReviewAt: daysFromNow(REVIEW_INTERVALS[Math.min(reps - 1, REVIEW_INTERVALS.length - 1)]),
         };
       }
-      return { lessonProgress: lp, conceptMastery: cm };
+      return { lessonProgress: lp, conceptMastery: cm, activityDays: withToday(s.activityDays) };
     });
     persist(get);
   },
@@ -249,7 +262,7 @@ export const useApp = create<AppState>((set, get) => ({
   },
 
   addSession: (session) => {
-    set((s) => ({ sessions: [session, ...s.sessions].slice(0, 100) }));
+    set((s) => ({ sessions: [session, ...s.sessions].slice(0, 100), activityDays: withToday(s.activityDays) }));
     persist(get);
   },
 
@@ -259,6 +272,7 @@ export const useApp = create<AppState>((set, get) => ({
       lessonProgress: initialProgress(),
       conceptMastery: {},
       sessions: [],
+      activityDays: [],
     });
     persist(get);
   },
@@ -276,6 +290,31 @@ export function moduleProgress(lp: Record<string, LessonProgress>, moduleId: str
   const lessons = lessonsForModule(moduleId);
   const passed = lessons.filter((l) => lp[l.id]?.status === "passed").length;
   return { passed, total: lessons.length };
+}
+
+/** Consecutive active days ending today or yesterday. */
+export function streakDays(days: string[]): number {
+  const set = new Set(days);
+  const d = new Date();
+  if (!set.has(dayKey(d))) d.setDate(d.getDate() - 1);
+  let n = 0;
+  while (set.has(dayKey(d))) {
+    n++;
+    d.setDate(d.getDate() - 1);
+  }
+  return n;
+}
+
+/** The lesson the user should continue with: first not-passed unlocked lesson (in module order). */
+export function currentLesson(lp: Record<string, LessonProgress>): { lesson: (typeof LESSONS)[number]; module: (typeof MODULES)[number]; index: number; total: number } | null {
+  for (const m of MODULES) {
+    if (m.status !== "published") continue;
+    const lessons = lessonsForModule(m.id);
+    const idx = lessons.findIndex((l) => lp[l.id]?.status === "available" || lp[l.id]?.status === "read");
+    const i = idx >= 0 ? idx : lessons.length - 1;
+    if (idx >= 0 || lessons.some((l) => lp[l.id]?.status === "passed")) return { lesson: lessons[i], module: m, index: i, total: lessons.length };
+  }
+  return null;
 }
 
 export function averageScore(sessions: SessionRecord[], n = 10): number | null {

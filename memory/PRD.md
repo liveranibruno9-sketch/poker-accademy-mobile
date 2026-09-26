@@ -38,6 +38,13 @@ App mobile "Poker Academy": trainer di Texas Hold'em No Limit 6-max cash (micro 
 - Profilo → "Riduci animazioni" (Sistema/Sì/No) persistito in `profile.reduceMotion`, rispetta `AccessibilityInfo.isReduceMotionEnabled`.
 - Ogni stato colorato porta anche glifo (✓ ! ✕ ▶ ●). Zero colori hardcoded fuori da theme.ts.
 
+## Revisione 2 — Home separata dal percorso (2026-06-26)
+- `app/(tabs)/index.tsx` = HOME minimale: riga stato (streak `streak` + media `reward`), una card progresso (lezione in corso → tap riprende), CTA hero `reward` "GIOCA UNA SESSIONE", pill "Ripassa" (badge concetti in scadenza) e "Statistiche". 16 token di contenuto (21 con tab bar).
+- `app/(tabs)/study.tsx` = percorso di studio: una card chiusa per modulo (titolo, sottotitolo, barra, contatore o lucchetto). Lezioni solo in `app/module/[id].tsx`.
+- Onboarding: 3 schermate, ≤ 8 parole + grafica SVG, "Salta" sempre visibile.
+- Store: `activityDays` (streak), selettori `streakDays()` e `currentLesson()`.
+- Frase "Applica la teoria al tavolo…" spostata nel setup sessione.
+
 ## Backlog (prioritized)
 - **P0**: —
 - **P1**: EV via rollout multi-strada completo (attuale: modello in forma chiusa, vedi DECISIONS.md); replay mano con "rigioca da qui"; export report come immagine (react-native-view-shot).

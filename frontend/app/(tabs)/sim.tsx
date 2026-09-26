@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { Body, Card, Heading, Pill, PrimaryButton, ScreenContainer, SectionLabel } from "@/src/ui/components";
-import { makeStyles, spacing, useTheme } from "@/src/theme";
+import { makeStyles, spacing } from "@/src/theme";
 import { it } from "@/src/i18n/it";
 import { useApp } from "@/src/store/appStore";
 import { COMPOSITIONS, useSim } from "@/src/features/sim/simStore";
@@ -37,6 +37,7 @@ export default function SimSetup() {
     <ScreenContainer testID="sim-setup-screen">
       <SectionLabel>{it.tabs.sim}</SectionLabel>
       <Heading size="display">{it.sim.setupTitle}</Heading>
+      <Body muted style={{ marginTop: spacing.sm }}>{it.sim.setupHint}</Body>
 
       <Card style={{ marginTop: spacing.lg }}>
         <SectionLabel>{it.sim.mode}</SectionLabel>

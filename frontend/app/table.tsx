@@ -14,7 +14,6 @@ import { RangeReadModal } from "@/src/features/sim/RangeReadModal";
 import { HeaderBar } from "@/src/ui/header";
 import { PrimaryButton } from "@/src/ui/components";
 import { CountUp, FlashView, PressableScale } from "@/src/ui/motion";
-import { haptic } from "@/src/ui/haptics";
 
 // Radial felt: `feltCenter` in the middle fading to `felt` at the edges.
 function FeltBackground() {

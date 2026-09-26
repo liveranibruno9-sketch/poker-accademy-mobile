@@ -1,18 +1,17 @@
 import React, { useState } from "react";
-import { View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Body, Card, Heading, PrimaryButton, SectionLabel } from "@/src/ui/components";
+import { Body, Card, Heading, PrimaryButton } from "@/src/ui/components";
 import { makeStyles, spacing, useTheme } from "@/src/theme";
 import { it } from "@/src/i18n/it";
 import { useApp, Level } from "@/src/store/appStore";
-import { EquityWheel } from "@/src/viz/charts";
+import { ScoreTimeline } from "@/src/viz/charts";
+import { CardRow } from "@/src/viz/PlayingCard";
 
-const STEPS = [
-  { kicker: "POKER ACADEMY", title: it.onboarding.s1Title, body: it.onboarding.s1Body },
-  { kicker: "IL SISTEMA", title: it.onboarding.s2Title, body: it.onboarding.s2Body },
-  { kicker: "IL TUO LIVELLO", title: it.onboarding.s3Title, body: "" },
-];
+// 3 screens · ≤ 8 words of copy each · one graphic · always skippable.
+const STEPS = [it.onboarding.s1Title, it.onboarding.s2Title, it.onboarding.s3Title];
+const SAMPLE_TIMELINE = [100, 97.5, 97.5, 92, 92, 90.5, 88];
 
 export default function Onboarding() {
   const s = useStyles();
@@ -23,44 +22,48 @@ export default function Onboarding() {
   const [step, setStep] = useState(0);
   const [level, setLevel] = useState<Level>("intuitive");
 
-  const cur = STEPS[step];
   const isLast = step === STEPS.length - 1;
 
+  const finish = (lvl: Level) => {
+    complete(lvl);
+    router.replace("/(tabs)");
+  };
+
   const onNext = () => {
-    if (isLast) {
-      complete(level);
-      router.replace("/(tabs)");
-    } else setStep((x) => x + 1);
+    if (isLast) finish(level);
+    else setStep((x) => x + 1);
   };
 
   return (
-    <View style={[s.root, { paddingTop: insets.top + spacing.xxl, paddingBottom: insets.bottom + spacing.xl }]}>
-      <View style={s.dots}>
-        {STEPS.map((_, i) => (
-          <View key={i} style={[s.dot, { backgroundColor: i <= step ? colors.progress : colors.surfaceTertiary }]} />
-        ))}
+    <View style={[s.root, { paddingTop: insets.top + spacing.md, paddingBottom: insets.bottom + spacing.xl }]} testID="onboarding-screen">
+      <View style={s.topRow}>
+        <View style={s.dots}>
+          {STEPS.map((_, i) => (
+            <View key={i} style={[s.dot, { backgroundColor: i <= step ? colors.progress : colors.surfaceTertiary }]} />
+          ))}
+        </View>
+        <Pressable onPress={() => finish("intuitive")} hitSlop={12} testID="onboarding-skip" accessibilityRole="button" style={s.skip}>
+          <Text style={s.skipText}>{it.onboarding.skip}</Text>
+        </Pressable>
       </View>
 
       <View style={s.content}>
-        <SectionLabel>{cur.kicker}</SectionLabel>
-        <Heading size="display" style={{ marginTop: spacing.sm }}>{cur.title}</Heading>
-        {cur.body ? <Body muted style={{ marginTop: spacing.lg }}>{cur.body}</Body> : null}
+        <View style={s.graphic}>
+          {step === 0 ? <CardRow cards={["As", "Kh"]} size="hero" gap={10} /> : null}
+          {step === 1 ? <ScoreTimeline timeline={SAMPLE_TIMELINE} width={280} /> : null}
+        </View>
 
-        {step === 1 ? (
-          <View style={{ alignItems: "center", marginTop: spacing.xxl }}>
-            <EquityWheel equity={1} labelHero="Decisione corretta" labelVillain="Esito del piatto" />
-          </View>
-        ) : null}
+        <Heading size="display" style={{ marginTop: spacing.xl, textAlign: "center" }}>{STEPS[step]}</Heading>
 
         {step === 2 ? (
-          <View style={{ gap: spacing.md, marginTop: spacing.xl }}>
+          <View style={{ gap: spacing.md, marginTop: spacing.xl, alignSelf: "stretch" }}>
             {([
               ["novice", it.onboarding.levelNovice],
               ["intuitive", it.onboarding.levelIntuitive],
               ["basics", it.onboarding.levelBasics],
             ] as [Level, string][]).map(([id, label]) => (
               <Card key={id} onPress={() => setLevel(id)} testID={`level-${id}`} style={level === id ? { borderColor: colors.interactive, borderWidth: 2 } : undefined}>
-                <Body style={{ fontWeight: level === id ? "700" : "500" }}>{level === id ? "● " : "○ "}{label}</Body>
+                <Body style={{ fontWeight: level === id ? "700" : "500", textAlign: "center" }}>{level === id ? "● " : "○ "}{label}</Body>
               </Card>
             ))}
           </View>
@@ -74,7 +77,11 @@ export default function Onboarding() {
 
 const useStyles = makeStyles((c) => ({
   root: { flex: 1, backgroundColor: c.surface, paddingHorizontal: spacing.xl },
-  content: { flex: 1, justifyContent: "center" },
-  dots: { flexDirection: "row", gap: 6 },
+  topRow: { flexDirection: "row", alignItems: "center", gap: spacing.lg, minHeight: 44 },
+  dots: { flex: 1, flexDirection: "row", gap: 6 },
   dot: { flex: 1, height: 4, borderRadius: 2 },
+  skip: { minHeight: 44, minWidth: 44, alignItems: "flex-end", justifyContent: "center" },
+  skipText: { color: c.interactive, fontSize: 15, fontWeight: "600" },
+  content: { flex: 1, justifyContent: "center", alignItems: "center" },
+  graphic: { minHeight: 120, alignItems: "center", justifyContent: "center" },
 }));
