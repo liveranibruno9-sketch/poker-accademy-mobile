@@ -1,0 +1,282 @@
+// Global app store (Zustand) with local persistence. Holds profile, study
+// progress, concept mastery (spaced repetition) and session history. Stats are
+// derived from sessions.
+
+import { create } from "zustand";
+import { storage } from "@/src/utils/storage";
+import { LESSONS, lessonsForModule, MODULES } from "@/src/content/curriculum";
+import { setColorScheme, setThemeOverride } from "@/src/theme";
+
+const KEY = "poker_academy_state_v3";
+const REVIEW_INTERVALS = [1, 3, 7, 16, 35]; // days, SM-2 simplified
+
+export type Level = "novice" | "intuitive" | "basics";
+export type ThemePref = "system" | "dark" | "light";
+export type VerdictMode = "immediate" | "endOfHand";
+
+export interface Profile {
+  onboarded: boolean;
+  level: Level;
+  theme: ThemePref;
+  verdictMode: VerdictMode;
+  timerSec: number;
+  hudEnabled: boolean;
+  createdAt: string;
+}
+
+export interface LessonProgress {
+  status: "locked" | "available" | "read" | "passed";
+  quizScore: number | null;
+}
+
+export interface ConceptMastery {
+  score: number; // 0..100
+  reps: number;
+  lastSeenAt: string;
+  nextReviewAt: string;
+}
+
+export interface EvActionRecord {
+  label: string;
+  evBb: number;
+  rank: number;
+}
+
+export interface DecisionRecord {
+  handIndex: number;
+  handSeed: string;
+  heroPosition: string;
+  heroCards: [string, string];
+  board: string[];
+  street: string;
+  potBb: number;
+  verdict: "correct" | "imprecise" | "error";
+  errorCode: string | null;
+  errorLabel: string | null;
+  severity: string;
+  pointsLost: number;
+  deltaEvBb: number;
+  equity: number;
+  requiredEquity: number;
+  mdf: number;
+  alpha: number;
+  spr: number;
+  chosenLabel: string;
+  bestLabel: string;
+  evActions: EvActionRecord[];
+  diceRead?: number;
+}
+
+export interface SessionRecord {
+  id: string;
+  startedAt: string;
+  endedAt: string;
+  mode: "rated" | "training";
+  handsPlanned: number;
+  handsPlayed: number;
+  scoreStart: number;
+  scoreFinal: number;
+  evLostBb: number;
+  endedEarly: boolean;
+  decisions: DecisionRecord[];
+  scoreTimeline: number[]; // score after each hand
+}
+
+interface PersistShape {
+  profile: Profile;
+  lessonProgress: Record<string, LessonProgress>;
+  conceptMastery: Record<string, ConceptMastery>;
+  sessions: SessionRecord[];
+}
+
+interface AppState extends PersistShape {
+  hydrated: boolean;
+  hydrate: () => Promise<void>;
+  setProfile: (p: Partial<Profile>) => void;
+  completeOnboarding: (level: Level) => void;
+  markLessonRead: (lessonId: string) => void;
+  setQuizScore: (lessonId: string, score: number, concepts: string[]) => void;
+  recordConceptResult: (concept: string, correct: boolean) => void;
+  addSession: (s: SessionRecord) => void;
+  resetProgress: () => void;
+}
+
+function defaultProfile(): Profile {
+  return {
+    onboarded: false,
+    level: "intuitive",
+    theme: "dark",
+    verdictMode: "immediate",
+    timerSec: 25,
+    hudEnabled: true,
+    createdAt: new Date().toISOString(),
+  };
+}
+
+function initialProgress(): Record<string, LessonProgress> {
+  const map: Record<string, LessonProgress> = {};
+  const m1 = lessonsForModule("M1");
+  m1.forEach((l, i) => {
+    map[l.id] = { status: i === 0 ? "available" : "locked", quizScore: null };
+  });
+  return map;
+}
+
+function daysFromNow(days: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  return d.toISOString();
+}
+
+function applyThemePref(theme: ThemePref) {
+  if (theme === "system") {
+    setThemeOverride(null);
+    setColorScheme(null);
+  } else {
+    setThemeOverride(theme);
+    setColorScheme(theme);
+  }
+}
+
+async function persist(get: () => AppState) {
+  const s = get();
+  const data: PersistShape = {
+    profile: s.profile,
+    lessonProgress: s.lessonProgress,
+    conceptMastery: s.conceptMastery,
+    sessions: s.sessions,
+  };
+  await storage.setItem(KEY, JSON.stringify(data));
+}
+
+export const useApp = create<AppState>((set, get) => ({
+  hydrated: false,
+  profile: defaultProfile(),
+  lessonProgress: initialProgress(),
+  conceptMastery: {},
+  sessions: [],
+
+  hydrate: async () => {
+    const raw = await storage.getItem(KEY, "");
+    if (raw) {
+      try {
+        const data = JSON.parse(raw) as PersistShape;
+        set({
+          profile: { ...defaultProfile(), ...data.profile },
+          lessonProgress: { ...initialProgress(), ...data.lessonProgress },
+          conceptMastery: data.conceptMastery ?? {},
+          sessions: data.sessions ?? [],
+          hydrated: true,
+        });
+        applyThemePref(data.profile?.theme ?? "dark");
+        return;
+      } catch {}
+    }
+    applyThemePref("dark");
+    set({ hydrated: true });
+  },
+
+  setProfile: (p) => {
+    set((s) => ({ profile: { ...s.profile, ...p } }));
+    if (p.theme) applyThemePref(p.theme);
+    persist(get);
+  },
+
+  completeOnboarding: (level) => {
+    set((s) => ({ profile: { ...s.profile, onboarded: true, level } }));
+    persist(get);
+  },
+
+  markLessonRead: (lessonId) => {
+    set((s) => {
+      const cur = s.lessonProgress[lessonId];
+      if (!cur || cur.status === "passed") return s;
+      return { lessonProgress: { ...s.lessonProgress, [lessonId]: { ...cur, status: "read" } } };
+    });
+    persist(get);
+  },
+
+  setQuizScore: (lessonId, score, concepts) => {
+    set((s) => {
+      const lp = { ...s.lessonProgress };
+      const passed = score >= 0.7;
+      lp[lessonId] = { status: passed ? "passed" : "read", quizScore: score };
+      // unlock next lesson in same module
+      const lesson = LESSONS.find((l) => l.id === lessonId);
+      if (lesson && passed) {
+        const modLessons = lessonsForModule(lesson.module);
+        const idx = modLessons.findIndex((l) => l.id === lessonId);
+        const next = modLessons[idx + 1];
+        if (next && lp[next.id]?.status === "locked") lp[next.id] = { status: "available", quizScore: null };
+      }
+      // concept mastery bump
+      const cm = { ...s.conceptMastery };
+      for (const c of concepts) {
+        const prev = cm[c];
+        const reps = (prev?.reps ?? 0) + 1;
+        const newScore = Math.min(100, Math.round((prev?.score ?? 0) * 0.4 + score * 100 * 0.6));
+        cm[c] = {
+          score: newScore,
+          reps,
+          lastSeenAt: new Date().toISOString(),
+          nextReviewAt: daysFromNow(REVIEW_INTERVALS[Math.min(reps - 1, REVIEW_INTERVALS.length - 1)]),
+        };
+      }
+      return { lessonProgress: lp, conceptMastery: cm };
+    });
+    persist(get);
+  },
+
+  recordConceptResult: (concept, correct) => {
+    set((s) => {
+      const cm = { ...s.conceptMastery };
+      const prev = cm[concept];
+      const reps = (prev?.reps ?? 0) + 1;
+      const base = prev?.score ?? 50;
+      const newScore = Math.max(0, Math.min(100, base + (correct ? 8 : -12)));
+      cm[concept] = {
+        score: newScore,
+        reps,
+        lastSeenAt: new Date().toISOString(),
+        nextReviewAt: daysFromNow(REVIEW_INTERVALS[Math.min(reps - 1, REVIEW_INTERVALS.length - 1)]),
+      };
+      return { conceptMastery: cm };
+    });
+    persist(get);
+  },
+
+  addSession: (session) => {
+    set((s) => ({ sessions: [session, ...s.sessions].slice(0, 100) }));
+    persist(get);
+  },
+
+  resetProgress: () => {
+    set({
+      profile: { ...defaultProfile(), onboarded: true, level: get().profile.level },
+      lessonProgress: initialProgress(),
+      conceptMastery: {},
+      sessions: [],
+    });
+    persist(get);
+  },
+}));
+
+// ---- Derived selectors (pure helpers) ----
+export function conceptsDue(cm: Record<string, ConceptMastery>): string[] {
+  const now = Date.now();
+  return Object.entries(cm)
+    .filter(([, m]) => m.score < 60 || new Date(m.nextReviewAt).getTime() <= now)
+    .map(([c]) => c);
+}
+
+export function moduleProgress(lp: Record<string, LessonProgress>, moduleId: string): { passed: number; total: number } {
+  const lessons = lessonsForModule(moduleId);
+  const passed = lessons.filter((l) => lp[l.id]?.status === "passed").length;
+  return { passed, total: lessons.length };
+}
+
+export function averageScore(sessions: SessionRecord[], n = 10): number | null {
+  const rated = sessions.filter((s) => s.mode === "rated").slice(0, n);
+  if (rated.length === 0) return null;
+  return rated.reduce((a, s) => a + s.scoreFinal, 0) / rated.length;
+}

@@ -1,0 +1,40 @@
+{
+  "summary": "Full end-to-end UI walk-through of Poker Academy (frontend-only, no backend). Verified: onboarding (3 screens, level selection, Inizia), tab Studio -> lezione L01 -> Vai al quiz, Quiz L01 (numeric + option questions, quiz-check/quiz-next, risultato quiz), Simulatore setup (mode-rated/hands-10/comp-realistic/start-session), Tavolo (table-screen, cards visible, action-fold/action-call/action-check, size-33%/50%/75%/100%/allin), verdict-sheet + verdict-continue, range-read-modal + range-skip, next-hand loop, session interruption at score < 50 -> report-screen -> report-done, Profilo (theme-dark/light/system, verdetto immediato/endOfHand, timer, open-glossary, reset-progress + reset-confirm), Glossario con glossary-search. Fixed a real i18n bug: SectionLabel was rendering multi-part children as an array-joined string producing 'DOMANDA ,1' and 'STACK, (BB)'. Now shows 'DOMANDA 1' and 'STACK (BB)'. Deprecated packages detected: TouchableMixin deprecation warning surfaced from a legacy Touchable* component; recommend migrating to Pressable. Also react-native-svg on web logs several 'Unknown event handler property onResponder*' warnings from src/viz/charts.tsx.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "SectionLabel (src/ui/components.tsx)", "issue": "FIXED. String(children).toUpperCase() produced comma-joined output when children was a JSX array. Visible as 'DOMANDA ,1' in quiz header and 'STACK, (BB)' in sim setup. Replaced with React.Children.toArray(children).map(String).join('').", "testID": "quiz screen / sim-setup-screen", "priority": "MEDIUM"},
+      {"component": "Sim setup helper copy", "issue": "'Parti da 100 punti, Conta la decisione, non il piatto vinto.' has uppercase 'C' mid-sentence after a comma. Cosmetic i18n typo (should be 'conta').", "testID": "sim-setup-screen", "priority": "LOW"},
+      {"component": "Stats screen (empty state)", "issue": "With no completed rated session, stats-screen shows only the empty banner and no sub-tab bar (Dashboard/Leak/Le tue stat/Concetti/Posizione). Consider always rendering the tab bar with per-tab empty states, or make it clear that sub-tabs unlock after first session. Also 'Sessione interrotta: punteggio sotto 50' cases don't populate stats, which may confuse users.", "testID": "stats-screen", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "table.tsx", "issues": ["Action bar Call/Raise buttons overlap the on-screen console-error overlay ('6 - Unknown event handler property...') in dev, which could hide taps on mobile if it ever surfaces in production."]}
+    ],
+    "react_native_issues": [
+      {"component": "react-native-svg on web (src/viz/charts.tsx:139)", "issue": "Multiple 'Unknown event handler property onResponderTerminate/Grant/Move/Release/TerminationRequest/StartShouldSetResponder' console errors when rendering Svg <Circle>/<Path> in the report/charts. Non-fatal but pollutes logs and produces an in-app red dev-error toast. Reference: /app/frontend/src/viz/charts.tsx:139. Consider dropping responder props on web or using a react-native-svg version compatible with RN Web, or gating Pressable-wrapping only to native."},
+      {"component": "TouchableMixin (deprecated)", "issue": "Console warning 'TouchableMixin is deprecated. Please use Pressable.' emitted during a play session. Some Touchable* legacy component is still in the tree - please migrate to Pressable."}
+    ]
+  },
+  "test_report_links": ["/app/test_reports/iteration_1.json"],
+  "action_items": [
+    "Review the corrected SectionLabel rendering (already applied) and audit other places using String(children) on JSX nodes.",
+    "Fix i18n typo 'Conta' -> 'conta' in sim setup helper text.",
+    "Decide UX for stats sub-tabs when there is no session data (currently invisible).",
+    "Silence/fix react-native-svg 'onResponder*' unknown event handler warnings on web (src/viz/charts.tsx).",
+    "Migrate remaining TouchableWithoutFeedback / TouchableOpacity usages (if any) to Pressable to remove deprecation warning.",
+    "Consider not aborting a rated session at <50 without a clearer message; the report says 'Sessione interrotta' but the CTA/flow is otherwise the same."
+  ],
+  "critical_code_review_comments": [
+    "src/ui/components.tsx SectionLabel used String(children).toUpperCase() - unsafe when children is an array (produced ',' from Array.toString). Fixed.",
+    "app/(tabs)/sim.tsx line 72 passes SectionLabel children as {it.sim.stack} (bb) which relied on the buggy behavior - now renders cleanly.",
+    "app/quiz/[id].tsx line 99 similar pattern with 'Domanda {index + 1}'."
+  ],
+  "updated_files": ["/app/frontend/src/ui/components.tsx"],
+  "success_rate": {"backend": "n/a (frontend only)", "frontend": "95%"},
+  "seed_data_creation": "None. App is fully offline / AsyncStorage-based.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "App is Expo web at EXPO_PUBLIC_BACKEND_URL. Storage resets between browser automation sessions, so always re-run onboarding (3x onboarding-next with level-* in between). Rated session ends automatically when score drops below 50; use hands-10 for fastest path to report. In loop handle order: range-read-modal (range-skip) -> verdict-sheet (verdict-continue) -> next-hand -> action-check/call/fold.",
+  "rca_of_issue": "SectionLabel bug RCA: React.ReactNode can be an array; String(array) invokes Array.prototype.toString which joins with ','. For '<SectionLabel>Domanda {index + 1}</SectionLabel>', children became ['Domanda ', 1] -> 'Domanda ,1'. Same for '{it.sim.stack} (bb)'. Fix: normalize children via React.Children.toArray(...).map(String).join('') before uppercasing."
+}
