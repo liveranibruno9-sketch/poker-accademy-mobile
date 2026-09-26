@@ -18,6 +18,45 @@ export const REFERENCE = {
   imprecisionBb: 0.25,
 };
 
+// Probability that the bot FOLDS a candidate combo when facing a bet/raise of
+// `callChips` into a pot of `potChips` (pot at the bot's decision, i.e. including
+// the aggressor's chips). Mirrors bots.ts decision branches exactly, including
+// the size thresholds. Used forward (fold equity) — same policy the tracker uses backward.
+export function foldProbForCombo(
+  hole: [Card, Card],
+  board: Card[],
+  street: "preflop" | "flop" | "turn" | "river",
+  profile: BotProfile,
+  callChips: number,
+  potChips: number,
+  botStack = Infinity,
+): number {
+  if (street === "preflop") {
+    const { call, raise } = continueVsOpenProb(hole, profile);
+    let fold = clamp(1 - call - raise, 0, 1);
+    // bots.ts: facing a call that costs > 35% of stack, fold with prob (1 - vpip/60)
+    if (callChips > botStack * 0.35) fold += call * clamp(1 - profile.vpip / 60, 0, 1);
+    return clamp(fold, 0, 1);
+  }
+  const bucket = handBucket(hole, board);
+  const aggr = profile.bluffiness;
+  if (bucket === "strong") return 0; // never folds
+  if (bucket === "medium") {
+    // folds with p = foldToCbet*0.7 only when the call costs more than 40% of the pot
+    return callChips > potChips * 0.4 ? clamp((profile.foldToCbet / 100) * 0.7, 0, 1) : 0;
+  }
+  if (bucket === "draw") {
+    // roll 1: raise (0.35 + aggr*0.3); roll 2: call 70% / fold 30%
+    const raiseP = clamp(0.35 + aggr * 0.3, 0, 0.9);
+    return (1 - raiseP) * 0.3;
+  }
+  // weak / air: fold roll, then bluff-raise roll, then call only if cheap (< 50% pot)
+  const foldP = clamp(profile.foldToCbet / 100, 0, 1);
+  const bluffRaiseP = clamp(aggr * 0.15, 0, 1);
+  const callsIfCheap = callChips < potChips * 0.5 ? 0 : 1;
+  return clamp(foldP + (1 - foldP) * (1 - bluffRaiseP) * callsIfCheap, 0, 1);
+}
+
 // Probability the bot's policy assigns to `action` given a candidate combo.
 // Mirrors bots.ts so the tracked range equals the true range.
 export function botProbForCombo(

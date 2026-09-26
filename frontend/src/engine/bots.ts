@@ -19,25 +19,28 @@ export interface BotProfile {
   descriptionIt: string;
   openWiden: number; // multiplier on RFI width
   bluffiness: number; // 0..1 tendency to bet/raise weak
+  // Empirical multipliers so that observed VPIP/PFR converge to the targets above
+  // (fitted by scripts/calibrate-bots.js over 5 000 hands; verified by __tests__/acceptance.ts).
+  calib: { open: number; limp: number; cont: number; threeBet: number };
 }
 
 export const BOT_PROFILES: Record<BotProfileId, BotProfile> = {
-  nit: { id: "nit", labelIt: "Nit", vpip: 14, pfr: 11, threeBet: 3, cbetFlop: 55, foldToCbet: 62, openWiden: 0.7, bluffiness: 0.05, descriptionIt: "Apre solo mani forti, folda facile, non bluffa." },
-  tag: { id: "tag", labelIt: "TAG", vpip: 23, pfr: 19, threeBet: 8, cbetFlop: 65, foldToCbet: 45, openWiden: 1.0, bluffiness: 0.25, descriptionIt: "Reg solido, quasi equilibrato, punisce gli errori." },
-  lag: { id: "lag", labelIt: "LAG", vpip: 34, pfr: 28, threeBet: 13, cbetFlop: 75, foldToCbet: 38, openWiden: 1.5, bluffiness: 0.45, descriptionIt: "Aggressivo, 3-betta largo, barrel frequenti." },
-  fish: { id: "fish", labelIt: "Fish", vpip: 52, pfr: 9, threeBet: 2, cbetFlop: 30, foldToCbet: 25, openWiden: 1.3, bluffiness: 0.1, descriptionIt: "Limpa, chiama troppo, non folda mai un paio." },
-  whale: { id: "whale", labelIt: "Whale", vpip: 68, pfr: 14, threeBet: 3, cbetFlop: 40, foldToCbet: 15, openWiden: 1.8, bluffiness: 0.15, descriptionIt: "Chiama qualsiasi cosa, sizing incoerenti." },
-  maniac: { id: "maniac", labelIt: "Maniac", vpip: 60, pfr: 45, threeBet: 22, cbetFlop: 85, foldToCbet: 30, openWiden: 2.2, bluffiness: 0.7, descriptionIt: "Raise costanti, bluff eccessivi." },
+  nit: { id: "nit", labelIt: "Nit", vpip: 14, pfr: 11, threeBet: 3, cbetFlop: 55, foldToCbet: 62, openWiden: 0.7, bluffiness: 0.05, descriptionIt: "Apre solo mani forti, folda facile, non bluffa.", calib: { open: 6.54, limp: 0.25, cont: 0.25, threeBet: 6.54 } },
+  tag: { id: "tag", labelIt: "TAG", vpip: 23, pfr: 19, threeBet: 8, cbetFlop: 65, foldToCbet: 45, openWiden: 1.0, bluffiness: 0.25, descriptionIt: "Reg solido, quasi equilibrato, punisce gli errori.", calib: { open: 4.79, limp: 0.42, cont: 0.42, threeBet: 4.79 } },
+  lag: { id: "lag", labelIt: "LAG", vpip: 34, pfr: 28, threeBet: 13, cbetFlop: 75, foldToCbet: 38, openWiden: 1.5, bluffiness: 0.45, descriptionIt: "Aggressivo, 3-betta largo, barrel frequenti.", calib: { open: 6.41, limp: 0.48, cont: 0.48, threeBet: 6.41 } },
+  fish: { id: "fish", labelIt: "Fish", vpip: 52, pfr: 9, threeBet: 2, cbetFlop: 30, foldToCbet: 25, openWiden: 1.3, bluffiness: 0.1, descriptionIt: "Limpa, chiama troppo, non folda mai un paio.", calib: { open: 0.97, limp: 0.82, cont: 0.82, threeBet: 0.97 } },
+  whale: { id: "whale", labelIt: "Whale", vpip: 68, pfr: 14, threeBet: 3, cbetFlop: 40, foldToCbet: 15, openWiden: 1.8, bluffiness: 0.15, descriptionIt: "Chiama qualsiasi cosa, sizing incoerenti.", calib: { open: 1.22, limp: 0.77, cont: 0.77, threeBet: 1.22 } },
+  maniac: { id: "maniac", labelIt: "Maniac", vpip: 60, pfr: 45, threeBet: 22, cbetFlop: 85, foldToCbet: 30, openWiden: 2.2, bluffiness: 0.7, descriptionIt: "Raise costanti, bluff eccessivi.", calib: { open: 3.60, limp: 0.54, cont: 0.54, threeBet: 3.60 } },
 };
 
 // Probability the bot opens (raises first in) with a given combo from position.
 export function openRaiseProb(hole: [Card, Card], position: Position, profile: BotProfile): number {
   const idx = comboIndexFromCards(hole[0], hole[1]);
   const inRfi = rfiRange(position)[idx] > 0;
-  if (inRfi) return Math.min(0.95, 0.8 + profile.bluffiness * 0.2);
-  // out of RFI: tight profiles never open trash; wider profiles open a little
-  if (profile.openWiden <= 1.1) return 0;
-  return Math.min(0.5, 0.02 * profile.openWiden * (profile.pfr / 15));
+  const c = profile.calib.open;
+  if (inRfi) return Math.min(0.98, (0.8 + profile.bluffiness * 0.2) * c);
+  // out of RFI: opens a little, proportionally to how wide the profile is
+  return Math.min(0.9, 0.02 * profile.openWiden * (profile.pfr / 15) * c);
 }
 
 // Probability the bot limps (calls) an unopened pot (fish/whale do this a lot).
@@ -46,7 +49,7 @@ export function limpProb(hole: [Card, Card], position: Position, profile: BotPro
   const inRfi = rfiRange(position)[idx] > 0;
   const looseCaller = profile.vpip - profile.pfr; // gap = passive calling
   if (looseCaller <= 5) return inRfi ? 0.02 : 0.0; // aggressive profiles rarely limp
-  const base = looseCaller / 100;
+  const base = Math.min(0.95, (looseCaller / 100) * profile.calib.limp);
   return inRfi ? base : base * 0.6;
 }
 
@@ -54,8 +57,8 @@ export function limpProb(hole: [Card, Card], position: Position, profile: BotPro
 export function continueVsOpenProb(hole: [Card, Card], profile: BotProfile): { call: number; raise: number } {
   const idx = comboIndexFromCards(hole[0], hole[1]);
   const in3b = threeBetRange()[idx] > 0;
-  const cont = Math.min(0.9, (profile.vpip / 100) * 1.6);
-  const raise = in3b ? Math.min(0.8, profile.threeBet / 12) : profile.bluffiness * 0.06;
+  const cont = Math.min(0.95, (profile.vpip / 100) * 1.6 * profile.calib.cont);
+  const raise = Math.min(cont, in3b ? Math.min(0.8, (profile.threeBet / 12) * profile.calib.threeBet) : profile.bluffiness * 0.06 * profile.calib.threeBet);
   const call = Math.max(0, cont - raise);
   return { call, raise };
 }

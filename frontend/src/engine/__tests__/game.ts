@@ -34,7 +34,7 @@ function baseConfig(seed: string, button = 0): HandConfig {
 // chip conservation over many hands
 const startTotal = 6 * 100;
 let conservationOk = true;
-for (let i = 0; i < 500; i++) {
+for (let i = 0; i < 10000; i++) {
   const st = createHand(baseConfig("hand-" + i, i % 6));
   playOutWithFolds(st);
   const total = st.seats.reduce((s, x) => s + x.stack, 0);
@@ -44,7 +44,7 @@ for (let i = 0; i < 500; i++) {
     break;
   }
 }
-assert(conservationOk, "chip conservation over 500 hands");
+assert(conservationOk, "chip conservation over 10000 hands");
 
 // determinism: same seed -> identical board + result
 const a = createHand(baseConfig("fixed-seed", 2));
@@ -61,9 +61,10 @@ updateRange(vr, { type: "raise", amount: 3 }, { street: "preflop", position: "UT
 const after = totalWeight(vr);
 const idx72o = comboIndexFromCards(parseCards("7h")[0], parseCards("2c")[0]);
 const idxAA = comboIndexFromCards(parseCards("As")[0], parseCards("Ah")[0]);
-assert(vr[idx72o] === 0, "72o weight 0 after tag UTG open (got " + vr[idx72o] + ")");
 let maxW = 0;
 for (let i = 0; i < 1326; i++) maxW = Math.max(maxW, vr[i]);
+// calibrated bots open a small share of out-of-chart hands: 72o must be far below AA, not necessarily 0
+assert(vr[idx72o] < 0.2 * maxW, "72o weight ≪ AA after tag UTG open (got " + vr[idx72o].toFixed(3) + " vs " + maxW.toFixed(3) + ")");
 assert(vr[idxAA] === maxW, "AA at max weight after open");
 assert(after <= before, "weight sum monotone non-increasing");
 

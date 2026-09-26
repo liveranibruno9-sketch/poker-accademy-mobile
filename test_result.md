@@ -173,3 +173,13 @@ frontend:
 agent_communication:
   - agent: "main"
     message: "Test L02 at /lesson/L02 (7 sub-screens), old-format lessons still render (L01 single slide with OutsCounter tap), glossary links, save takeaway, review quiz from Home 'Ripassa' after wrong answers, and that simulator verdict/report (EvBarChart, ScoreTimeline) still render."
+
+## Iteration 5 — Revisione 4a: fold equity dal range tracciato (bug fix motore)
+frontend:
+  - task: "ev.ts fold equity computed from bayesian ranges via bot policy (foldProbForCombo); simController.precomputeEv background; bots calib; npm test with acceptance tests (all green: 29+12+20)"
+    implemented: true
+    working: "NA"
+    needs_retesting: true
+agent_communication:
+  - agent: "main"
+    message: "Verify: `cd /app/frontend && npm test` all green; simulator table still works end to end (actions, verdict sheet shows EV bars with distinct values for bet sizes, report), no UI freeze when the hero node opens; EV bars for Bet/Raise are not all identical/zero."

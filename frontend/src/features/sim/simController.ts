@@ -5,7 +5,7 @@
 import { autoPlayToHero, BOT_PROFILES, botDecision } from "@/src/engine/bots";
 import { rfiRange } from "@/src/engine/charts";
 import { formatCard } from "@/src/engine/cards";
-import { computeActionEvs, EvContext } from "@/src/engine/ev";
+import { computeActionEvs, EvContext, VillainModel } from "@/src/engine/ev";
 import {
   applyAction,
   createHand,
@@ -174,18 +174,33 @@ export class SimController {
     return mergeRanges(active);
   }
 
-  private foldAdj(): number {
-    const active = this.state.seats.filter((s) => !s.isHero && !s.folded);
-    if (active.length === 0) return 1;
-    const avg = active.reduce((a, s) => a + BOT_PROFILES[s.profile as BotProfileId].foldToCbet, 0) / active.length;
-    return Math.max(0.4, Math.min(1.8, avg / 45));
+  private villainModels(): VillainModel[] {
+    return this.state.seats
+      .filter((s) => !s.isHero && !s.folded)
+      .map((s) => ({ weights: this.villainRanges[s.index], profile: BOT_PROFILES[s.profile as BotProfileId], committed: s.committed, stack: s.stack }));
   }
 
   getEv(): EvContext {
     if (!this.evCache) {
-      this.evCache = computeActionEvs(this.state, this.effectiveRange(), { foldAdj: this.foldAdj(), maxIters: 1000 });
+      this.evCache = computeActionEvs(this.state, this.effectiveRange(), { villains: this.villainModels(), maxIters: 1000 });
     }
     return this.evCache;
+  }
+
+  // Start the EV computation in the background as soon as the hero's node opens,
+  // so the result is ready (cached) by the time the player acts. Never blocks the UI.
+  precomputeEv(): void {
+    if (this.evCache || this.finished) return;
+    const hero = heroSeat(this.state);
+    if (this.state.toAct !== hero.index) return;
+    const nodeKey = () => `${this.state.handSeed}-${this.state.street}-${this.state.log.length}-${this.state.toAct}`;
+    const snapshot = nodeKey();
+    const run = () => {
+      if (this.evCache || this.finished || nodeKey() !== snapshot) return; // node changed meanwhile
+      this.getEv();
+    };
+    if (typeof setImmediate === "function") setImmediate(run);
+    else setTimeout(run, 0);
   }
 
   private maybeTriggerRangeRead() {

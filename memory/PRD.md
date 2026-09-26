@@ -54,6 +54,11 @@ App mobile "Poker Academy": trainer di Texas Hold'em No Limit 6-max cash (micro 
 - Takeaway salvabile → Glossario "Regole salvate" (`savedTakeaways`); ripasso misto `/quiz/review` (round-robin fra concetti in scadenza, max 6).
 - L02 riscritta (7 sub-schermate, 237 parole visibili + feedback). L01, L03–L10: da riscrivere dopo approvazione.
 
+## Revisione 4a — motore: fold equity dal range (2026-06-26)
+- `ev.ts`: `VillainModel`, `foldEquityVsRange`, `combinedFoldEquity`; `referencePolicy.foldProbForCombo` (size-aware). `simController.precomputeEv()` in background.
+- `bots.ts`: `calib` per profilo (fit con `scripts/calibrate-bots.js`).
+- `npm test` → `scripts/run-tests.js` (+ `scripts/lib/transpile.js`); nuovo `__tests__/acceptance.ts` (29 asserzioni). Tutti verdi.
+
 ## Backlog (prioritized)
 - **P0**: —
 - **P1**: EV via rollout multi-strada completo (attuale: modello in forma chiusa, vedi DECISIONS.md); replay mano con "rigioca da qui"; export report come immagine (react-native-view-shot).

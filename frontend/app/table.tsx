@@ -63,10 +63,12 @@ export default function TableScreen() {
 
   const nodeKey = st ? `${st.handSeed}-${st.street}-${st.log.length}-${st.toAct}` : "none";
 
-  // reset bet selection on new node
+  // reset bet selection on new node; start the EV computation in background while the player thinks
   useEffect(() => {
     setBetTo(null);
-  }, [nodeKey]);
+    if (heroToAct) controller?.precomputeEv();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nodeKey, heroToAct]);
 
   // decision timer (rated only)
   useEffect(() => {

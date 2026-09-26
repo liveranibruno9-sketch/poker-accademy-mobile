@@ -1,0 +1,33 @@
+{
+  "summary": "Revision 4a fold-equity bug fix validated end-to-end. `cd /app/frontend && npm test` exits 0 with ACCEPTANCE TESTS: 29 passed, GAME TESTS: 12 passed, ENGINE TESTS: 20 passed. The PRIMA/DOPO fold-equity table shows DOPO ordering nit=16.08 > tag=3.40 > whale=-18.87 (tag != 0.00). `node scripts/check-lesson-budget.js` prints OK. `npx tsc --noEmit -p .` reports exactly the 7 pre-existing errors (5 in app/(tabs)/_layout.tsx OpaqueColorValue, 1 in src/theme.ts 'unspecified', 1 in src/ui/components.tsx:50) with zero errors in src/engine or features/sim. UI regression (rated mode, 390x844) confirms verdict-sheet EV bar chart shows DISTINCT values for each Raise size, Call, All-in, Fold (e.g. Raise 33%=2.4, 50%=2.2, 75%=2.1, 100%=1.9, Call=1.1, Fold=0.0, All-in=-10.3; second hand: 18.5/18.2/17.5/16.7/13.3/10.1/0.0). No NaN, no freeze after node open (background precomputeEv), 0 console errors during rated mode play, 1 pre-existing deprecation warning (props.pointerEvents). Training mode shows 'Equity: 67%' hint on the table and actions work.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": [
+      {"component": "pointerEvents prop", "issue": "Deprecation warning 'props.pointerEvents is deprecated. Use style.pointerEvents' observed on load (pre-existing, not caused by this revision)."}
+    ]
+  },
+  "test_report_links": [
+    "/app/frontend/src/engine/__tests__/acceptance.ts",
+    "/app/frontend/src/engine/__tests__/game.ts",
+    "/app/frontend/src/engine/__tests__/run.ts"
+  ],
+  "action_items": [
+    "(Optional, out of scope of revision 4a) Address the deprecation warning for props.pointerEvents by moving to style.pointerEvents.",
+    "(Optional) Fix the 7 pre-existing tsc errors in app/(tabs)/_layout.tsx (OpaqueColorValue vs string), src/theme.ts ('unspecified' color scheme), and src/ui/components.tsx line 50 (ReactNode compared with false)."
+  ],
+  "critical_code_review_comments": [
+    "SimController.precomputeEv correctly kicks off in background and the UI remains responsive when a hero node opens.",
+    "Fold equity in ev.ts now correctly integrates over the bayesian-tracked villain range using referencePolicy.foldProbForCombo (size-aware) — Raise EV values are distinct per size in the verdict sheet.",
+    "Bot calibration multipliers keep observed VPIP/PFR within ~2 pts of target for all 6 profiles over 5000 hands."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A", "frontend": "100%"},
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Revision 4a is fully green. Engine test suite: 29+12+20 = 61 tests pass. Rated verdict-sheet EV bars have distinct per-size values. Training mode equity hint 'Equity: 67%' renders. Only pre-existing deprecation warning and 7 tsc errors (outside engine/sim).",
+  "rca_of_issue": "N/A — this iteration validated a completed bug fix (fold equity tautology in ev.ts). Old code averaged foldToCbet per profile producing EV=0 for the tag pure-bluff case; new code integrates foldProbForCombo across the tracked range, producing meaningful, distinct EVs for each bet size and villain type."
+}
